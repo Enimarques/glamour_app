@@ -30,190 +30,188 @@ class ListaProdutosMarketplace(QWidget):
     def inicializar_ui(self):
         """Inicializa a interface do usuário."""
         layout_principal = QVBoxLayout(self)
-        layout_principal.setContentsMargins(20, 20, 20, 20)
-        layout_principal.setSpacing(15)
+        layout_principal.setContentsMargins(30, 30, 30, 30)
+        layout_principal.setSpacing(20)
         
-        # Cabeçalho com filtros e carrinho
-        self.criar_cabecalho(layout_principal)
+        # Cabeçalho da Página (Breadcrumb)
+        self.criar_cabecalho_pagina(layout_principal)
         
-        # Conteúdo principal (produtos + carrinho)
+        # Toolbar (Filtros e Ações)
+        self.criar_toolbar(layout_principal)
+        
+        # Cards de Resumo
+        self.criar_cards_resumo(layout_principal)
+        
+        # Barra do carrinho (mantida como original mas com estilo atualizado)
+        self.criar_barra_carrinho(layout_principal)
+        
+        # Conteúdo principal (produtos)
         self.criar_conteudo_principal(layout_principal)
         
-        # Aplicar estilo
-        self.aplicar_estilo()
+    def criar_cabecalho_pagina(self, layout_principal):
+        """Cria o cabeçalho com breadcrumb."""
+        layout_header = QHBoxLayout()
         
-    def criar_cabecalho(self, layout_principal):
-        """Cria o cabeçalho com título, filtros e carrinho."""
-        # Layout do cabeçalho
-        layout_cabecalho = QHBoxLayout()
+        # Título e Ícone
+        layout_titulo = QHBoxLayout()
+        lbl_icone = QLabel("🛒")
+        lbl_icone.setObjectName("breadcrumb_icon")
+        layout_titulo.addWidget(lbl_icone)
         
-        # Título
-        lbl_titulo = QLabel("Marketplace de Produtos")
-        lbl_titulo.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            color: #333333;
-        """)
-        layout_cabecalho.addWidget(lbl_titulo)
+        lbl_titulo = QLabel("Marketplace")
+        lbl_titulo.setObjectName("page_title")
+        layout_titulo.addWidget(lbl_titulo)
         
-        # Espaçador
-        layout_cabecalho.addStretch()
+        lbl_sep = QLabel("/")
+        lbl_sep.setObjectName("breadcrumb_separator")
+        layout_titulo.addWidget(lbl_sep)
         
-        # Filtros
+        lbl_subtitulo = QLabel("Produtos")
+        lbl_subtitulo.setObjectName("page_subtitle")
+        layout_titulo.addWidget(lbl_subtitulo)
+        
+        layout_titulo.addStretch()
+        layout_header.addLayout(layout_titulo)
+        
+        layout_principal.addLayout(layout_header)
+
+    def criar_toolbar(self, layout_principal):
+        """Cria a barra de ferramentas com busca e ações."""
+        self.frame_toolbar = QFrame()
+        self.frame_toolbar.setObjectName("toolbar_header")
+        layout_toolbar = QHBoxLayout(self.frame_toolbar)
+        layout_toolbar.setContentsMargins(15, 10, 15, 10)
+        
+        # Busca
+        self.campo_busca = QLineEdit()
+        self.campo_busca.setPlaceholderText("Buscar produtos por nome ou categoria...")
+        self.campo_busca.setMinimumWidth(300)
+        self.campo_busca.textChanged.connect(self.filtrar_produtos)
+        layout_toolbar.addWidget(self.campo_busca)
+        
+        # Filtro Categoria
         self.combo_categoria = QComboBox()
         self.combo_categoria.addItem("Todas as categorias")
         self.combo_categoria.addItems(["Semijoias", "Relógios", "Acessórios", "Outros"])
-        self.combo_categoria.setMinimumWidth(150)
+        self.combo_categoria.setMinimumWidth(180)
         self.combo_categoria.currentTextChanged.connect(self.filtrar_produtos)
-        layout_cabecalho.addWidget(self.combo_categoria)
+        layout_toolbar.addWidget(self.combo_categoria)
         
-        self.campo_busca = QLineEdit()
-        self.campo_busca.setPlaceholderText("Buscar produtos...")
-        self.campo_busca.setMinimumWidth(200)
-        self.campo_busca.textChanged.connect(self.filtrar_produtos)
-        layout_cabecalho.addWidget(self.campo_busca)
+        layout_toolbar.addStretch()
         
-        # Botões
-        self.btn_atualizar = QPushButton("Atualizar")
-        self.btn_atualizar.setObjectName("secondary")
+        # Botões de Ação
+        self.btn_atualizar = QPushButton(" Atualizar")
+        self.btn_atualizar.setObjectName("btn_mais_acoes")
         self.btn_atualizar.clicked.connect(self.carregar_produtos)
-        layout_cabecalho.addWidget(self.btn_atualizar)
+        layout_toolbar.addWidget(self.btn_atualizar)
         
-        self.btn_adicionar = QPushButton("Adicionar Produto")
+        self.btn_adicionar = QPushButton(" Adicionar Produto")
+        self.btn_adicionar.setObjectName("btn_adicionar")
         self.btn_adicionar.clicked.connect(self.adicionar_produto)
-        layout_cabecalho.addWidget(self.btn_adicionar)
+        layout_toolbar.addWidget(self.btn_adicionar)
         
-        layout_principal.addLayout(layout_cabecalho)
+        layout_principal.addWidget(self.frame_toolbar)
+
+    def criar_cards_resumo(self, layout_principal):
+        """Cria os cards de resumo estatístico."""
+        self.layout_cards = QHBoxLayout()
         
-        # Barra do carrinho
-        self.criar_barra_carrinho(layout_principal)
+        # Card Total de Produtos
+        self.card_total = QFrame()
+        self.card_total.setObjectName("summary_card_total")
+        layout_total = QVBoxLayout(self.card_total)
+        lbl_tit_total = QLabel("TOTAL PRODUTOS")
+        lbl_tit_total.setObjectName("summary_card_title")
+        self.lbl_val_total = QLabel("0")
+        self.lbl_val_total.setObjectName("summary_card_value")
+        layout_total.addWidget(lbl_tit_total)
+        layout_total.addWidget(self.lbl_val_total)
         
+        # Card Estoque Baixo
+        self.card_alerta = QFrame()
+        self.card_alerta.setObjectName("summary_card_vencidos")
+        layout_alerta = QVBoxLayout(self.card_alerta)
+        lbl_tit_alerta = QLabel("ESTOQUE BAIXO")
+        lbl_tit_alerta.setObjectName("summary_card_title")
+        self.lbl_val_alerta = QLabel("0")
+        self.lbl_val_alerta.setObjectName("summary_card_value")
+        layout_alerta.addWidget(lbl_tit_alerta)
+        layout_alerta.addWidget(self.lbl_val_alerta)
+        
+        # Card Valor em Estoque
+        self.card_valor = QFrame()
+        self.card_valor.setObjectName("summary_card_recebidos")
+        layout_valor = QVBoxLayout(self.card_valor)
+        lbl_tit_valor = QLabel("VALOR EM ESTOQUE")
+        lbl_tit_valor.setObjectName("summary_card_title")
+        self.lbl_val_valor = QLabel("R$ 0,00")
+        self.lbl_val_valor.setObjectName("summary_card_value")
+        layout_valor.addWidget(lbl_tit_valor)
+        layout_valor.addWidget(self.lbl_val_valor)
+        
+        self.layout_cards.addWidget(self.card_total)
+        self.layout_cards.addWidget(self.card_alerta)
+        self.layout_cards.addWidget(self.card_valor)
+        
+        layout_principal.addLayout(self.layout_cards)
+
+    def atualizar_cards_resumo(self):
+        """Atualiza os valores dos cards de resumo."""
+        total_produtos = len(self.produtos)
+        estoque_baixo = sum(1 for p in self.produtos if p.quantidade <= 2)
+        valor_total = sum(p.preco_venda * p.quantidade for p in self.produtos)
+        
+        self.lbl_val_total.setText(str(total_produtos))
+        self.lbl_val_alerta.setText(str(estoque_baixo))
+        self.lbl_val_valor.setText(f"R$ {valor_total:.2f}")
+
     def criar_barra_carrinho(self, layout_principal):
         """Cria a barra de informações do carrinho."""
         self.frame_carrinho = QFrame()
-        self.frame_carrinho.setStyleSheet("""
-            QFrame {
-                background-color: #4A90E2;
-                border-radius: 8px;
-                padding: 10px;
-            }
-        """)
+        self.frame_carrinho.setObjectName("barra_carrinho")
         
         layout_carrinho = QHBoxLayout(self.frame_carrinho)
+        layout_carrinho.setContentsMargins(15, 10, 15, 10)
         
-        self.lbl_info_carrinho = QLabel("Carrinho vazio")
-        self.lbl_info_carrinho.setStyleSheet("""
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-        """)
+        self.lbl_info_carrinho = QLabel("🛒 Carrinho vazio")
+        self.lbl_info_carrinho.setObjectName("info_carrinho")
         
         layout_carrinho.addWidget(self.lbl_info_carrinho)
         layout_carrinho.addStretch()
         
         self.btn_ver_carrinho = QPushButton("Ver Carrinho")
-        self.btn_ver_carrinho.setStyleSheet("""
-            QPushButton {
-                background-color: white;
-                color: #4A90E2;
-                border: none;
-                border-radius: 6px;
-                padding: 8px 15px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background-color: #F0F5FF;
-            }
-        """)
+        self.btn_ver_carrinho.setObjectName("btn_ver_carrinho")
+        self.btn_ver_carrinho.setMinimumWidth(120)
         self.btn_ver_carrinho.clicked.connect(self.abrir_carrinho)
         layout_carrinho.addWidget(self.btn_ver_carrinho)
         
         layout_principal.addWidget(self.frame_carrinho)
-        
+
     def criar_conteudo_principal(self, layout_principal):
         """Cria o conteúdo principal com grade de produtos."""
         # Área de rolagem para os produtos
         self.scroll_area = QScrollArea()
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setStyleSheet("""
-            QScrollArea {
-                border: none;
-            }
-        """)
+        self.scroll_area.setObjectName("scroll_area_clean")
+        self.scroll_area.setFrameShape(QFrame.NoFrame)
         
         # Widget container para os produtos
         self.container_produtos = QWidget()
+        self.container_produtos.setObjectName("container_produtos_bg")
         self.layout_grade_produtos = QGridLayout(self.container_produtos)
-        self.layout_grade_produtos.setSpacing(20)
-        self.layout_grade_produtos.setContentsMargins(10, 10, 10, 10)
+        self.layout_grade_produtos.setSpacing(25)
+        self.layout_grade_produtos.setContentsMargins(5, 5, 5, 5)
         
         self.scroll_area.setWidget(self.container_produtos)
         layout_principal.addWidget(self.scroll_area)
-        
-    def aplicar_estilo(self):
-        """Aplica o estilo moderno à interface."""
-        estilo = """
-        QWidget {
-            background-color: #F8F9FA;
-            font-family: Arial, sans-serif;
-        }
-        
-        QComboBox {
-            padding: 8px 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            background-color: white;
-            min-height: 20px;
-        }
-        
-        QLineEdit {
-            padding: 10px 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            background-color: white;
-            selection-background-color: #4A90E2;
-        }
-        
-        QLineEdit:focus {
-            border: 1px solid #4A90E2;
-            outline: none;
-        }
-        
-        QPushButton {
-            background-color: #4A90E2;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 6px;
-            font-weight: 500;
-        }
-        
-        QPushButton:hover {
-            background-color: #357ABD;
-        }
-        
-        QPushButton:pressed {
-            background-color: #2E6DA4;
-        }
-        
-        QPushButton#secondary {
-            background-color: #F8F9FA;
-            color: #333333;
-            border: 1px solid #E0E0E0;
-        }
-        
-        QPushButton#secondary:hover {
-            background-color: #E9ECEF;
-        }
-        """
-        self.setStyleSheet(estilo)
-        
+
     def carregar_produtos(self):
         """Carrega a lista de produtos do banco de dados."""
         try:
             self.produtos = ProdutoController.listar_produtos()
             self.produtos_filtrados = self.produtos.copy()
             self.atualizar_grade_produtos()
+            self.atualizar_cards_resumo()
             self.produtos_atualizados.emit()
         except Exception as e:
             QMessageBox.critical(self, "Erro", f"Não foi possível carregar os produtos:\n{str(e)}")
@@ -260,30 +258,18 @@ class ListaProdutosMarketplace(QWidget):
     def criar_widget_produto(self, produto: Produto) -> QWidget:
         """Cria um widget para exibir um produto."""
         widget = QFrame()
-        widget.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border: 1px solid #E0E0E0;
-                border-radius: 12px;
-                padding: 15px;
-            }
-            QFrame:hover {
-                border: 1px solid #4A90E2;
-            }
-        """)
+        widget.setObjectName("card_produto")
+        # Hover effect added via global stylesheet
         
         layout = QVBoxLayout(widget)
         layout.setSpacing(10)
         
         # Imagem do produto (placeholder)
         lbl_imagem = QLabel()
-        lbl_imagem.setStyleSheet("""
-            background-color: #F8F9FA;
-            border-radius: 8px;
-            min-height: 150px;
-            max-height: 150px;
-        """)
+        lbl_imagem.setObjectName("placeholder_imagem")
         lbl_imagem.setAlignment(Qt.AlignCenter)
+        lbl_imagem.setMinimumHeight(150)
+        lbl_imagem.setMaximumHeight(150)
         
         # Se tiver imagem, mostrar (por enquanto usando placeholder)
         if produto.caminho_imagem and os.path.exists(produto.caminho_imagem):
@@ -291,72 +277,37 @@ class ListaProdutosMarketplace(QWidget):
             lbl_imagem.setPixmap(pixmap.scaled(150, 150, Qt.KeepAspectRatio, Qt.SmoothTransformation))
         else:
             lbl_imagem.setText("📷\nImagem")
-            lbl_imagem.setStyleSheet("""
-                background-color: #F8F9FA;
-                border-radius: 8px;
-                min-height: 150px;
-                max-height: 150px;
-                color: #666666;
-                font-size: 14px;
-            """)
             
         layout.addWidget(lbl_imagem)
         
-        # Nome do produto
+        # Info do produto
         lbl_nome = QLabel(produto.nome)
-        lbl_nome.setStyleSheet("""
-            font-size: 16px;
-            font-weight: bold;
-            color: #333333;
-            margin-top: 5px;
-        """)
+        lbl_nome.setObjectName("produto_nome")
         lbl_nome.setWordWrap(True)
         layout.addWidget(lbl_nome)
         
-        # Categoria
         lbl_categoria = QLabel(produto.categoria)
-        lbl_categoria.setStyleSheet("""
-            font-size: 13px;
-            color: #666666;
-            margin-bottom: 5px;
-        """)
+        lbl_categoria.setObjectName("produto_categoria")
         layout.addWidget(lbl_categoria)
         
-        # Preço
         lbl_preco = QLabel(f"R$ {produto.preco_venda:.2f}")
-        lbl_preco.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: #4A90E2;
-            margin: 5px 0;
-        """)
+        lbl_preco.setObjectName("produto_preco")
         layout.addWidget(lbl_preco)
         
-        # Estoque
-        lbl_estoque = QLabel(f"Estoque: {produto.quantidade}")
-        lbl_estoque.setStyleSheet("""
-            font-size: 12px;
-            color: #666666;
-        """)
-        layout.addWidget(lbl_estoque)
+        # Botões
+        layout_botoes = QHBoxLayout()
         
-        # Botão de adicionar ao carrinho
-        btn_adicionar = QPushButton("Adicionar ao Carrinho")
-        btn_adicionar.setStyleSheet("""
-            QPushButton {
-                background-color: #28A745;
-                color: white;
-                border: none;
-                border-radius: 6px;
-                padding: 8px;
-                font-weight: 500;
-            }
-            QPushButton:hover {
-                background-color: #218838;
-            }
-        """)
-        btn_adicionar.clicked.connect(lambda _, p=produto: self.adicionar_ao_carrinho(p))
-        layout.addWidget(btn_adicionar)
+        btn_adicionar = QPushButton("Adicionar")
+        btn_adicionar.setObjectName("primary")
+        btn_adicionar.clicked.connect(lambda: self.adicionar_ao_carrinho(produto))
+        layout_botoes.addWidget(btn_adicionar)
+        
+        btn_editar = QPushButton("Editar")
+        btn_editar.setObjectName("secondary")
+        btn_editar.clicked.connect(lambda: self.editar_produto(produto))
+        layout_botoes.addWidget(btn_editar)
+        
+        layout.addLayout(layout_botoes)
         
         return widget
         
@@ -448,12 +399,7 @@ class DialogoCarrinho(QDialog):
         
         # Título
         lbl_titulo = QLabel("Carrinho de Compras")
-        lbl_titulo.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            color: #333333;
-            margin-bottom: 20px;
-        """)
+        lbl_titulo.setObjectName("titulo_pagina")
         layout_principal.addWidget(lbl_titulo)
         
         # Conteúdo do carrinho
@@ -501,14 +447,7 @@ class DialogoCarrinho(QDialog):
     def criar_widget_item_carrinho(self, item: ItemCarrinho) -> QWidget:
         """Cria um widget para exibir um item do carrinho."""
         widget = QFrame()
-        widget.setStyleSheet("""
-            QFrame {
-                background-color: white;
-                border: 1px solid #E0E0E0;
-                border-radius: 8px;
-                padding: 15px;
-            }
-        """)
+        widget.setObjectName("item_carrinho")
         
         layout = QHBoxLayout(widget)
         
@@ -516,18 +455,18 @@ class DialogoCarrinho(QDialog):
         layout_info = QVBoxLayout()
         
         lbl_nome = QLabel(item.produto.nome)
-        lbl_nome.setStyleSheet("font-weight: bold; font-size: 16px;")
+        lbl_nome.setObjectName("produto_nome")
         layout_info.addWidget(lbl_nome)
         
         lbl_categoria = QLabel(item.produto.categoria)
-        lbl_categoria.setStyleSheet("color: #666666;")
+        lbl_categoria.setObjectName("produto_categoria")
         layout_info.addWidget(lbl_categoria)
         
         layout.addLayout(layout_info)
         
         # Preço unitário
         lbl_preco_unitario = QLabel(f"R$ {item.produto.preco_venda:.2f}")
-        lbl_preco_unitario.setStyleSheet("font-size: 16px;")
+        lbl_preco_unitario.setObjectName("preco_unitario")
         layout.addWidget(lbl_preco_unitario)
         
         # Quantidade
@@ -541,23 +480,12 @@ class DialogoCarrinho(QDialog):
         
         # Subtotal
         lbl_subtotal = QLabel(f"R$ {item.subtotal:.2f}")
-        lbl_subtotal.setStyleSheet("font-weight: bold; font-size: 16px; color: #4A90E2;")
+        lbl_subtotal.setObjectName("carrinho_subtotal")
         layout.addWidget(lbl_subtotal)
         
         # Botão remover
         btn_remover = QPushButton("Remover")
-        btn_remover.setStyleSheet("""
-            QPushButton {
-                background-color: #FF6B6B;
-                color: white;
-                border: none;
-                border-radius: 4px;
-                padding: 5px 10px;
-            }
-            QPushButton:hover {
-                background-color: #E55A5A;
-            }
-        """)
+        btn_remover.setObjectName("btn_remover_carrinho")
         btn_remover.clicked.connect(lambda _, pid=item.produto.id: self.remover_item(pid))
         layout.addWidget(btn_remover)
         
@@ -602,26 +530,19 @@ class DialogoCarrinho(QDialog):
     def criar_resumo_pedido(self, layout_grupo):
         """Cria o resumo do pedido."""
         self.frame_resumo = QFrame()
-        self.frame_resumo.setStyleSheet("""
-            QFrame {
-                background-color: #F8F9FA;
-                border: 1px solid #E0E0E0;
-                border-radius: 8px;
-                padding: 15px;
-            }
-        """)
+        self.frame_resumo.setObjectName("container_card")
         
         layout_resumo = QVBoxLayout(self.frame_resumo)
         
         lbl_resumo_titulo = QLabel("Resumo do Pedido")
-        lbl_resumo_titulo.setStyleSheet("font-weight: bold; font-size: 16px; margin-bottom: 10px;")
+        lbl_resumo_titulo.setObjectName("titulo_resumo")
         layout_resumo.addWidget(lbl_resumo_titulo)
         
         self.lbl_resumo_itens = QLabel()
         layout_resumo.addWidget(self.lbl_resumo_itens)
         
         self.lbl_resumo_total = QLabel()
-        self.lbl_resumo_total.setStyleSheet("font-weight: bold; font-size: 18px; color: #4A90E2;")
+        self.lbl_resumo_total.setObjectName("total_resumo")
         layout_resumo.addWidget(self.lbl_resumo_total)
         
         layout_grupo.addWidget(self.frame_resumo)
@@ -645,6 +566,7 @@ class DialogoCarrinho(QDialog):
         layout_botoes.addWidget(self.btn_cancelar)
         
         self.btn_finalizar = QPushButton("Finalizar Compra")
+        self.btn_finalizar.setObjectName("success")
         self.btn_finalizar.clicked.connect(self.finalizar_compra)
         layout_botoes.addWidget(self.btn_finalizar)
         

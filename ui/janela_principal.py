@@ -8,6 +8,7 @@ from PyQt5.QtCore import Qt, QSize
 from PyQt5.QtGui import QIcon, QFont, QPixmap, QColor, QPalette
 from ui.lista_produtos_marketplace import ListaProdutosMarketplace
 from ui.lista_clientes import ListaClientes
+from ui.lista_consignacoes import ListaConsignacoes
 from ui.lista_vendas import ListaVendas
 from ui.lista_relatorios import ListaRelatorios
 from ui.lista_configuracoes import ListaConfiguracoes
@@ -30,73 +31,40 @@ class JanelaPrincipal(QMainWindow):
         self.criar_stacked_widget()
         self.criar_barra_status()
         
-        # Aplicar estilo moderno
-        self.aplicar_estilo()
-        
     def criar_sidebar(self):
         """Cria a sidebar de navegação."""
         # Sidebar
         self.sidebar = QFrame()
-        self.sidebar.setFixedWidth(250)
-        self.sidebar.setStyleSheet("""
-            QFrame {
-                background-color: #2C3E50;
-                border-right: 1px solid #34495E;
-            }
-        """)
+        self.sidebar.setObjectName("sidebar")
+        self.sidebar.setFixedWidth(280)
+        # Style is now handled globally in styles.py
         
         # Layout da sidebar
         layout_sidebar = QVBoxLayout(self.sidebar)
-        layout_sidebar.setContentsMargins(0, 20, 0, 20)
-        layout_sidebar.setSpacing(0)
+        layout_sidebar.setContentsMargins(0, 30, 0, 30)
+        layout_sidebar.setSpacing(10)
         
         # Logo/Title
         lbl_logo = QLabel("JOIA SYSTEM")
-        lbl_logo.setStyleSheet("""
-            color: white;
-            font-size: 20px;
-            font-weight: bold;
-            padding: 20px;
-            border-bottom: 1px solid #34495E;
-        """)
+        lbl_logo.setObjectName("logo_label")
         lbl_logo.setAlignment(Qt.AlignCenter)
         layout_sidebar.addWidget(lbl_logo)
         
         # Lista de navegação
         self.lista_navegacao = QListWidget()
+        self.lista_navegacao.setObjectName("nav_list")
         self.lista_navegacao.addItems([
             "Dashboard",
             "Produtos", 
             "Clientes",
             "Vendas",
+            "Consignações",
             "Cobranças",
             "Relatórios",
             "Configurações"
         ])
-        self.lista_navegacao.setStyleSheet("""
-            QListWidget {
-                background-color: transparent;
-                border: none;
-                color: #ECF0F1;
-                font-size: 16px;
-                padding: 10px 0;
-            }
-            
-            QListWidget::item {
-                padding: 15px 30px;
-                border-bottom: 1px solid #34495E;
-            }
-            
-            QListWidget::item:selected {
-                background-color: #3498DB;
-                color: white;
-                border-left: 4px solid #1ABC9C;
-            }
-            
-            QListWidget::item:hover {
-                background-color: #34495E;
-            }
-        """)
+        # Style is now handled globally in styles.py
+        
         self.lista_navegacao.currentRowChanged.connect(self.mudar_aba)
         layout_sidebar.addWidget(self.lista_navegacao)
         
@@ -116,6 +84,7 @@ class JanelaPrincipal(QMainWindow):
         self.criar_widget_produtos()
         self.criar_widget_clientes()
         self.criar_widget_vendas()
+        self.criar_widget_consignacoes()
         self.criar_widget_cobrancas()
         self.criar_widget_relatorios()
         self.criar_widget_configuracoes()
@@ -128,34 +97,100 @@ class JanelaPrincipal(QMainWindow):
         widget_dashboard = QWidget()
         layout_dashboard = QVBoxLayout(widget_dashboard)
         layout_dashboard.setContentsMargins(30, 30, 30, 30)
+        layout_dashboard.setSpacing(20)
         
-        # Título
+        # Cabeçalho da página
+        layout_header = QHBoxLayout()
+        
+        # Layout para ícone + título
+        layout_titulo = QHBoxLayout()
+        lbl_icone = QLabel("🏠")
+        lbl_icone.setObjectName("breadcrumb_icon")
+        layout_titulo.addWidget(lbl_icone)
+        
         lbl_titulo = QLabel("Dashboard")
-        lbl_titulo.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            color: #333333;
-            margin-bottom: 20px;
-        """)
-        layout_dashboard.addWidget(lbl_titulo)
+        lbl_titulo.setObjectName("page_title")
+        layout_titulo.addWidget(lbl_titulo)
+        layout_titulo.addStretch()
+        layout_header.addLayout(layout_titulo)
         
-        # Mensagem de funcionalidade em desenvolvimento
-        lbl_mensagem = QLabel("Dashboard em desenvolvimento.\nAqui serão exibidas métricas e indicadores importantes.")
-        lbl_mensagem.setStyleSheet("""
-            font-size: 16px;
-            color: #666666;
-            background-color: #F8F9FA;
-            padding: 40px;
-            border-radius: 8px;
-            border: 1px dashed #E0E0E0;
-            text-align: center;
-        """)
+        # Breadcrumb
+        layout_breadcrumb = QHBoxLayout()
+        layout_breadcrumb.addStretch()
+        lbl_home = QLabel("🏠 Início")
+        lbl_home.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_home)
+        
+        lbl_sep1 = QLabel(" › ")
+        lbl_sep1.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_sep1)
+        
+        lbl_atual = QLabel("Dashboard")
+        lbl_atual.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_atual)
+        layout_header.addLayout(layout_breadcrumb)
+        
+        layout_dashboard.addLayout(layout_header)
+        
+        # Cards de resumo
+        layout_cards = QHBoxLayout()
+        layout_cards.setSpacing(15)
+        
+        card_vendas = self.criar_card_dashboard("Vendas do Mês", "R$ 0,00", "💰", "summary_card_total")
+        card_clientes = self.criar_card_dashboard("Novos Clientes", "0", "👥", "summary_card_recebidos")
+        card_estoque = self.criar_card_dashboard("Produtos em Estoque", "0", "📦", "summary_card_a_vencer")
+        card_alertas = self.criar_card_dashboard("Alertas", "0", "⚠", "summary_card_vencem_hoje")
+        
+        layout_cards.addWidget(card_vendas)
+        layout_cards.addWidget(card_clientes)
+        layout_cards.addWidget(card_estoque)
+        layout_cards.addWidget(card_alertas)
+        
+        layout_dashboard.addLayout(layout_cards)
+        
+        # Área de Conteúdo Central
+        container_msg = QFrame()
+        container_msg.setObjectName("container_card")
+        layout_msg = QVBoxLayout(container_msg)
+        layout_msg.setContentsMargins(50, 50, 50, 50)
+        
+        lbl_mensagem = QLabel("Bem-vindo ao JOIA SYSTEM\n\nO seu painel de controle central está sendo preparado.\nAqui você verá gráficos de vendas, metas e indicadores de desempenho.")
+        lbl_mensagem.setStyleSheet("color: #6B6B6B; font-size: 16px; line-height: 1.5;")
         lbl_mensagem.setAlignment(Qt.AlignCenter)
-        layout_dashboard.addWidget(lbl_mensagem)
+        
+        layout_msg.addWidget(lbl_mensagem)
+        layout_dashboard.addWidget(container_msg)
         
         layout_dashboard.addStretch()
         
         self.stacked_widget.addWidget(widget_dashboard)
+
+    def criar_card_dashboard(self, titulo, valor, icone, object_name):
+        """Cria um card de resumo para o dashboard."""
+        frame = QFrame()
+        frame.setObjectName(object_name)
+        frame.setMinimumHeight(120)
+        
+        layout = QVBoxLayout(frame)
+        layout.setSpacing(10)
+        layout.setContentsMargins(20, 20, 20, 20)
+        
+        layout_header = QHBoxLayout()
+        lbl_titulo = QLabel(titulo)
+        lbl_titulo.setObjectName("summary_card_title")
+        layout_header.addWidget(lbl_titulo)
+        
+        lbl_icone = QLabel(icone)
+        lbl_icone.setObjectName("summary_card_icon")
+        layout_header.addWidget(lbl_icone)
+        layout.addLayout(layout_header)
+        
+        lbl_valor = QLabel(valor)
+        lbl_valor.setObjectName("summary_card_value")
+        lbl_valor.setStyleSheet("font-size: 24px;")
+        layout.addWidget(lbl_valor)
+        
+        return frame
         
     def criar_widget_produtos(self):
         """Cria o widget de produtos."""
@@ -171,6 +206,11 @@ class JanelaPrincipal(QMainWindow):
         """Cria o widget de vendas."""
         self.lista_vendas = ListaVendas()
         self.stacked_widget.addWidget(self.lista_vendas)
+        
+    def criar_widget_consignacoes(self):
+        """Cria o widget de consignações."""
+        self.lista_consignacoes = ListaConsignacoes()
+        self.stacked_widget.addWidget(self.lista_consignacoes)
         
     def criar_widget_cobrancas(self):
         """Cria o widget de cobranças."""
@@ -196,21 +236,6 @@ class JanelaPrincipal(QMainWindow):
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage("Sistema pronto para uso")
-        
-    def aplicar_estilo(self):
-        """Aplica o estilo moderno à aplicação."""
-        estilo = """
-        QMainWindow {
-            background-color: #F8F9FA;
-        }
-        
-        QStatusBar {
-            background-color: #2C3E50;
-            color: white;
-            border-top: 1px solid #34495E;
-        }
-        """
-        self.setStyleSheet(estilo)
         
     def mostrar_lista_produtos(self):
         """Mostra a aba de lista de produtos."""

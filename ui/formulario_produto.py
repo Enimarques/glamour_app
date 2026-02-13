@@ -37,9 +37,6 @@ class FormularioProduto(QDialog):
         self.setModal(True)
         self.resize(500, 400)
         
-        # Aplicar estilo
-        self.aplicar_estilo()
-        
         # Layout principal
         layout_principal = QVBoxLayout(self)
         layout_principal.setContentsMargins(30, 30, 30, 30)
@@ -47,12 +44,7 @@ class FormularioProduto(QDialog):
         
         # Título
         lbl_titulo = QLabel("Cadastro de Produto" if not self.produto else "Edição de Produto")
-        lbl_titulo.setStyleSheet("""
-            font-size: 20px;
-            font-weight: bold;
-            color: #333333;
-            margin-bottom: 10px;
-        """)
+        lbl_titulo.setObjectName("titulo_pagina")
         layout_principal.addWidget(lbl_titulo)
         
         # Grupo de informações básicas
@@ -74,81 +66,6 @@ class FormularioProduto(QDialog):
         if self.produto:
             self.preencher_campos()
             
-    def aplicar_estilo(self):
-        """Aplica o estilo moderno ao formulário."""
-        estilo = """
-        QDialog {
-            background-color: #FFFFFF;
-        }
-        
-        QLabel {
-            color: #333333;
-            font-family: "Segoe UI", "Roboto", Arial, sans-serif;
-        }
-        
-        QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox {
-            padding: 10px 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            background-color: white;
-            selection-background-color: #4A90E2;
-            font-size: 14px;
-            min-height: 20px;
-        }
-        
-        QLineEdit:focus, QComboBox:focus, QDoubleSpinBox:focus, QSpinBox:focus {
-            border: 1px solid #4A90E2;
-            outline: none;
-        }
-        
-        QGroupBox {
-            border: 1px solid #E0E0E0;
-            border-radius: 8px;
-            margin-top: 15px;
-            padding-top: 20px;
-            font-weight: bold;
-            color: #4A90E2;
-        }
-        
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            subcontrol-position: top left;
-            left: 15px;
-            padding: 0 10px;
-            background-color: white;
-        }
-        
-        QPushButton {
-            background-color: #4A90E2;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            padding: 12px 24px;
-            font-size: 14px;
-            font-weight: 500;
-            min-width: 100px;
-        }
-        
-        QPushButton:hover {
-            background-color: #357ABD;
-        }
-        
-        QPushButton:pressed {
-            background-color: #2E6DA4;
-        }
-        
-        QPushButton#secondary {
-            background-color: transparent;
-            color: #4A90E2;
-            border: 1px solid #4A90E2;
-        }
-        
-        QPushButton#secondary:hover {
-            background-color: #F0F5FF;
-        }
-        """
-        self.setStyleSheet(estilo)
-        
     def criar_grupo_informacoes(self, layout_principal):
         """Cria o grupo de informações básicas."""
         grupo_info = QGroupBox("Informações Básicas")
@@ -241,6 +158,7 @@ class FormularioProduto(QDialog):
         layout_botoes.addWidget(btn_cancelar)
         
         btn_salvar = QPushButton("Salvar")
+        btn_salvar.setObjectName("primary")
         btn_salvar.clicked.connect(self.salvar)
         btn_salvar.setDefault(True)
         layout_botoes.addWidget(btn_salvar)

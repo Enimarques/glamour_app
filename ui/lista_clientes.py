@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QTableWidget, QTableWidgetItem, QHeaderView, 
                              QMessageBox, QAbstractItemView, QLabel, QLineEdit,
-                             QSpacerItem, QSizePolicy)
+                             QSpacerItem, QSizePolicy, QFrame, QMenu)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QColor
 from models.cliente import Cliente
@@ -27,255 +27,418 @@ class ListaClientes(QWidget):
         layout_principal.setContentsMargins(30, 30, 30, 30)
         layout_principal.setSpacing(20)
         
-        # Cabeçalho com filtros
-        self.criar_cabecalho(layout_principal)
+        # Cabeçalho da página
+        self.criar_cabecalho_pagina(layout_principal)
+        
+        # Barra de ferramentas
+        self.criar_barra_ferramentas(layout_principal)
+        
+        # Cards de resumo
+        self.criar_cards_resumo(layout_principal)
         
         # Tabela de clientes
         self.criar_tabela_clientes(layout_principal)
         
-        # Aplicar estilo
-        self.aplicar_estilo()
+    def criar_cabecalho_pagina(self, layout_principal):
+        """Cria o cabeçalho da página com título e breadcrumb."""
+        layout_header = QHBoxLayout()
         
-    def criar_cabecalho(self, layout_principal):
-        """Cria o cabeçalho com título e filtros."""
-        # Layout do cabeçalho
-        layout_cabecalho = QHBoxLayout()
+        # Layout para ícone + título
+        layout_titulo = QHBoxLayout()
         
-        # Título
-        lbl_titulo = QLabel("Lista de Clientes")
-        lbl_titulo.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            color: #333333;
-        """)
-        layout_cabecalho.addWidget(lbl_titulo)
+        lbl_icone = QLabel("👥")
+        lbl_icone.setObjectName("breadcrumb_icon")
+        layout_titulo.addWidget(lbl_icone)
         
-        # Espaçador
-        layout_cabecalho.addStretch()
+        lbl_titulo = QLabel("Clientes")
+        lbl_titulo.setObjectName("page_title")
+        layout_titulo.addWidget(lbl_titulo)
+        
+        layout_titulo.addStretch()
+        layout_header.addLayout(layout_titulo)
+        
+        # Breadcrumb
+        layout_breadcrumb = QHBoxLayout()
+        layout_breadcrumb.addStretch()
+        
+        lbl_home = QLabel("🏠 Início")
+        lbl_home.setObjectName("breadcrumb")
+        lbl_home.setCursor(Qt.PointingHandCursor)
+        layout_breadcrumb.addWidget(lbl_home)
+        
+        lbl_sep1 = QLabel(" › ")
+        lbl_sep1.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_sep1)
+        
+        lbl_atual = QLabel("Clientes")
+        lbl_atual.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_atual)
+        
+        lbl_sep2 = QLabel(" › ")
+        lbl_sep2.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_sep2)
+        
+        lbl_listar = QLabel("Listar")
+        lbl_listar.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_listar)
+        
+        layout_header.addLayout(layout_breadcrumb)
+        layout_principal.addLayout(layout_header)
+        
+    def criar_barra_ferramentas(self, layout_principal):
+        """Cria a barra de ferramentas com ações e filtros."""
+        frame_toolbar = QFrame()
+        frame_toolbar.setObjectName("toolbar_header")
+        layout_toolbar = QHBoxLayout(frame_toolbar)
+        layout_toolbar.setContentsMargins(10, 10, 10, 10)
+        layout_toolbar.setSpacing(15)
+        
+        # Botões de ação
+        btn_adicionar = QPushButton("✚ Adicionar Cliente")
+        btn_adicionar.setObjectName("btn_adicionar")
+        btn_adicionar.clicked.connect(self.adicionar_cliente)
+        layout_toolbar.addWidget(btn_adicionar)
+        
+        btn_mais_acoes = QPushButton("⚙ Mais ações ▼")
+        btn_mais_acoes.setObjectName("btn_mais_acoes")
+        btn_mais_acoes.clicked.connect(self.mostrar_mais_acoes)
+        layout_toolbar.addWidget(btn_mais_acoes)
+        
+        layout_toolbar.addStretch()
         
         # Campo de busca
         self.campo_busca = QLineEdit()
-        self.campo_busca.setPlaceholderText("Buscar clientes...")
-        self.campo_busca.setMinimumWidth(200)
+        self.campo_busca.setPlaceholderText("🔍 Buscar por nome, telefone ou email...")
+        self.campo_busca.setMinimumWidth(300)
         self.campo_busca.textChanged.connect(self.filtrar_clientes)
-        layout_cabecalho.addWidget(self.campo_busca)
+        layout_toolbar.addWidget(self.campo_busca)
         
-        # Botões
-        self.btn_atualizar = QPushButton("Atualizar")
-        self.btn_atualizar.setObjectName("secondary")
-        self.btn_atualizar.clicked.connect(self.carregar_clientes)
-        layout_cabecalho.addWidget(self.btn_atualizar)
+        # Botão atualizar
+        btn_atualizar = QPushButton("↻ Atualizar")
+        btn_atualizar.setObjectName("secondary")
+        btn_atualizar.clicked.connect(self.carregar_clientes)
+        layout_toolbar.addWidget(btn_atualizar)
         
-        self.btn_adicionar = QPushButton("Adicionar Cliente")
-        self.btn_adicionar.clicked.connect(self.adicionar_cliente)
-        layout_cabecalho.addWidget(self.btn_adicionar)
+        layout_principal.addWidget(frame_toolbar)
         
-        layout_principal.addLayout(layout_cabecalho)
+    def criar_cards_resumo(self, layout_principal):
+        """Cria os cards de resumo."""
+        layout_cards = QHBoxLayout()
+        layout_cards.setSpacing(15)
+        
+        # Card Total de Clientes
+        self.card_total = self.criar_card_resumo(
+            "Total de Clientes", "0", "👥", "summary_card_total"
+        )
+        layout_cards.addWidget(self.card_total)
+        
+        # Card Clientes Ativos
+        self.card_ativos = self.criar_card_resumo(
+            "Clientes Ativos", "0", "✓", "summary_card_recebidos"
+        )
+        layout_cards.addWidget(self.card_ativos)
+        
+        # Card Clientes com Dívidas
+        self.card_dividas = self.criar_card_resumo(
+            "Com Dívidas", "0", "⚠", "summary_card_vencem_hoje"
+        )
+        layout_cards.addWidget(self.card_dividas)
+        
+        # Card Novos (este mês)
+        self.card_novos = self.criar_card_resumo(
+            "Novos este Mês", "0", "⭐", "summary_card_a_vencer"
+        )
+        layout_cards.addWidget(self.card_novos)
+        
+        layout_principal.addLayout(layout_cards)
+        
+    def criar_card_resumo(self, titulo, valor, icone, object_name):
+        """Cria um card de resumo."""
+        frame = QFrame()
+        frame.setObjectName(object_name)
+        frame.setMinimumHeight(100)
+        
+        layout = QVBoxLayout(frame)
+        layout.setSpacing(8)
+        layout.setContentsMargins(15, 15, 15, 15)
+        
+        # Header
+        layout_header = QHBoxLayout()
+        
+        lbl_titulo = QLabel(titulo)
+        lbl_titulo.setObjectName("summary_card_title")
+        layout_header.addWidget(lbl_titulo)
+        
+        lbl_icone = QLabel(icone)
+        lbl_icone.setObjectName("summary_card_icon")
+        layout_header.addWidget(lbl_icone)
+        
+        layout.addLayout(layout_header)
+        
+        # Valor
+        lbl_valor = QLabel(valor)
+        lbl_valor.setObjectName("summary_card_value")
+        layout.addWidget(lbl_valor)
+        
+        layout.addStretch()
+        
+        return frame
         
     def criar_tabela_clientes(self, layout_principal):
-        """Cria a tabela de clientes com estilo moderno."""
+        """Cria a tabela de clientes."""
+        container_tabela = QFrame()
+        container_tabela.setObjectName("container_card")
+        layout_container = QVBoxLayout(container_tabela)
+        layout_container.setContentsMargins(20, 20, 20, 20)
+        
+        # Tabela
         self.tabela_clientes = QTableWidget()
-        self.tabela_clientes.setColumnCount(5)
+        self.tabela_clientes.setColumnCount(6)
         self.tabela_clientes.setHorizontalHeaderLabels([
-            "ID", "Nome", "Telefone", "Observações", "Ações"
+            "Código", "Nome", "Telefone", "Email", "Status", "Ações"
         ])
         
-        # Configurações da tabela
+        # Configurações
         self.tabela_clientes.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tabela_clientes.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabela_clientes.setSelectionMode(QAbstractItemView.SingleSelection)
         self.tabela_clientes.setAlternatingRowColors(True)
+        self.tabela_clientes.setShowGrid(False)
+        self.tabela_clientes.verticalHeader().setVisible(False)
         
         # Configurar cabeçalho
         header = self.tabela_clientes.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
-        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # ID
-        header.setSectionResizeMode(1, QHeaderView.Stretch)  # Nome
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)  # Código
+        header.setSectionResizeMode(1, QHeaderView.Stretch)           # Nome
         header.setSectionResizeMode(2, QHeaderView.ResizeToContents)  # Telefone
-        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Ações
+        header.setSectionResizeMode(3, QHeaderView.Stretch)           # Email
+        header.setSectionResizeMode(4, QHeaderView.ResizeToContents)  # Status
+        header.setSectionResizeMode(5, QHeaderView.Fixed)             # Ações
+        header.resizeSection(5, 180)
         
-        # Altura das linhas
-        self.tabela_clientes.verticalHeader().setDefaultSectionSize(50)
+        self.tabela_clientes.verticalHeader().setDefaultSectionSize(60)
         
-        layout_principal.addWidget(self.tabela_clientes)
-        
-    def aplicar_estilo(self):
-        """Aplica o estilo moderno à tabela."""
-        estilo = """
-        QTableWidget {
-            background-color: white;
-            alternate-background-color: #FAFAFA;
-            border: 1px solid #E0E0E0;
-            border-radius: 8px;
-            gridline-color: #F0F0F0;
-            selection-background-color: #F0F5FF;
-            selection-color: #333333;
-        }
-        
-        QTableWidget::item {
-            padding: 10px;
-            border-bottom: 1px solid #F0F0F0;
-        }
-        
-        QTableWidget::item:selected {
-            background-color: #F0F5FF;
-        }
-        
-        QHeaderView::section {
-            background-color: #F5F5F5;
-            color: #333333;
-            padding: 12px;
-            font-weight: 600;
-            border: none;
-            border-bottom: 1px solid #E0E0E0;
-        }
-        
-        QLineEdit {
-            padding: 10px 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            background-color: white;
-            selection-background-color: #4A90E2;
-        }
-        
-        QLineEdit:focus {
-            border: 1px solid #4A90E2;
-            outline: none;
-        }
-        """
-        self.tabela_clientes.setStyleSheet(estilo)
+        layout_container.addWidget(self.tabela_clientes)
+        layout_principal.addWidget(container_tabela)
         
     def carregar_clientes(self):
-        """Carrega a lista de clientes do banco de dados."""
+        """Carrega a lista de clientes."""
         try:
             self.clientes = ClienteController.listar_clientes()
             self.clientes_filtrados = self.clientes.copy()
+            self.atualizar_resumo()
             self.atualizar_tabela()
-            self.clientes_atualizados.emit()
         except Exception as e:
             QMessageBox.critical(self, "Erro", f"Não foi possível carregar os clientes:\n{str(e)}")
             
-    def filtrar_clientes(self):
-        """Filtra os clientes com base no termo de busca."""
-        termo_busca = self.campo_busca.text().lower()
-        
-        self.clientes_filtrados = self.clientes.copy()
-        
-        # Filtrar por termo de busca
-        if termo_busca:
-            self.clientes_filtrados = [
-                c for c in self.clientes_filtrados 
-                if (termo_busca in c.nome.lower() or 
-                    (c.telefone and termo_busca in c.telefone.lower()) or
-                    (c.observacoes and termo_busca in c.observacoes.lower()))
-            ]
+    def atualizar_resumo(self):
+        """Atualiza os cards de resumo."""
+        try:
+            total = len(self.clientes)
+            # Por enquanto, todos são considerados ativos
+            ativos = total
+            # Implementar lógica de dívidas se necessário
+            dividas = 0
+            # Novos este mês (simplificado)
+            novos = 0
             
-        self.atualizar_tabela()
-        
+            self.atualizar_card_valor(self.card_total, str(total))
+            self.atualizar_card_valor(self.card_ativos, str(ativos))
+            self.atualizar_card_valor(self.card_dividas, str(dividas))
+            self.atualizar_card_valor(self.card_novos, str(novos))
+        except Exception as e:
+            print(f"Erro ao atualizar resumo: {e}")
+            
+    def atualizar_card_valor(self, card, valor):
+        """Atualiza o valor em um card de resumo."""
+        layout = card.layout()
+        if layout and layout.count() >= 2:
+            item_valor = layout.itemAt(1)
+            if item_valor:
+                lbl_valor = item_valor.widget()
+                if lbl_valor:
+                    lbl_valor.setText(valor)
+                    
     def atualizar_tabela(self):
-        """Atualiza a tabela com os clientes."""
+        """Atualiza a tabela de clientes."""
         self.tabela_clientes.setRowCount(len(self.clientes_filtrados))
         
         for linha, cliente in enumerate(self.clientes_filtrados):
-            # Coluna ID
-            item_id = QTableWidgetItem(str(cliente.id))
-            item_id.setTextAlignment(Qt.AlignCenter)
-            item_id.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            self.tabela_clientes.setItem(linha, 0, item_id)
+            # Código
+            item_codigo = QTableWidgetItem(str(cliente.id))
+            item_codigo.setTextAlignment(Qt.AlignCenter)
+            self.tabela_clientes.setItem(linha, 0, item_codigo)
             
-            # Coluna Nome
+            # Nome
             item_nome = QTableWidgetItem(cliente.nome)
-            item_nome.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
             self.tabela_clientes.setItem(linha, 1, item_nome)
             
-            # Coluna Telefone
-            telefone = cliente.telefone if cliente.telefone else "-"
-            item_telefone = QTableWidgetItem(telefone)
-            item_telefone.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            # Telefone
+            item_telefone = QTableWidgetItem(cliente.telefone or "---")
+            item_telefone.setTextAlignment(Qt.AlignCenter)
             self.tabela_clientes.setItem(linha, 2, item_telefone)
             
-            # Coluna Observações
-            observacoes = cliente.observacoes if cliente.observacoes else "-"
-            item_obs = QTableWidgetItem(observacoes)
-            item_obs.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-            self.tabela_clientes.setItem(linha, 3, item_obs)
+            # Email
+            item_email = QTableWidgetItem(cliente.email or "---")
+            self.tabela_clientes.setItem(linha, 3, item_email)
             
-            # Coluna Ações (botões)
-            widget_acoes = QWidget()
-            layout_acoes = QHBoxLayout(widget_acoes)
-            layout_acoes.setContentsMargins(10, 5, 10, 5)
-            layout_acoes.setSpacing(8)
+            # Status
+            widget_status = self.criar_badge_status(cliente)
+            self.tabela_clientes.setCellWidget(linha, 4, widget_status)
             
-            btn_editar = QPushButton("Editar")
-            btn_editar.setObjectName("secondary")
-            btn_editar.setFixedSize(80, 30)
-            btn_editar.clicked.connect(lambda checked, c=cliente: self.editar_cliente(c))
-            layout_acoes.addWidget(btn_editar)
+            # Ações
+            widget_acoes = self.criar_widget_acoes(cliente)
+            self.tabela_clientes.setCellWidget(linha, 5, widget_acoes)
             
-            btn_excluir = QPushButton("Excluir")
-            btn_excluir.setStyleSheet("""
-                QPushButton {
-                    background-color: #FF6B6B;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 13px;
-                }
-                QPushButton:hover {
-                    background-color: #E55A5A;
-                }
-            """)
-            btn_excluir.setFixedSize(80, 30)
-            btn_excluir.clicked.connect(lambda checked, c=cliente: self.excluir_cliente(c))
-            layout_acoes.addWidget(btn_excluir)
-            
-            layout_acoes.addStretch()
-            self.tabela_clientes.setCellWidget(linha, 4, widget_acoes)
-            
-        # Ajustar altura das linhas
-        for i in range(self.tabela_clientes.rowCount()):
-            self.tabela_clientes.setRowHeight(i, 50)
-            
+    def criar_badge_status(self, cliente):
+        """Cria o badge de status."""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setAlignment(Qt.AlignCenter)
+        
+        badge = QLabel("Ativo")
+        badge.setObjectName("badge_confirmado")
+        badge.setAlignment(Qt.AlignCenter)
+        layout.addWidget(badge)
+        
+        return widget
+        
+    def criar_widget_acoes(self, cliente):
+        """Cria o widget com botões de ação."""
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(5)
+        layout.setAlignment(Qt.AlignCenter)
+        
+        # Botão Visualizar
+        btn_view = QPushButton("👁")
+        btn_view.setObjectName("btn_action_view")
+        btn_view.setToolTip("Visualizar detalhes")
+        btn_view.clicked.connect(lambda: self.visualizar_cliente(cliente))
+        layout.addWidget(btn_view)
+        
+        # Botão Editar
+        btn_edit = QPushButton("✏")
+        btn_edit.setObjectName("btn_action_edit")
+        btn_edit.setToolTip("Editar cliente")
+        btn_edit.clicked.connect(lambda: self.editar_cliente(cliente))
+        layout.addWidget(btn_edit)
+        
+        # Botão Excluir
+        btn_delete = QPushButton("✖")
+        btn_delete.setObjectName("btn_action_delete")
+        btn_delete.setToolTip("Excluir cliente")
+        btn_delete.clicked.connect(lambda: self.excluir_cliente(cliente))
+        layout.addWidget(btn_delete)
+        
+        # Botão Mais
+        btn_more = QPushButton("⋮")
+        btn_more.setObjectName("btn_action_more")
+        btn_more.setToolTip("Mais ações")
+        btn_more.clicked.connect(lambda: self.mais_acoes_item(cliente))
+        layout.addWidget(btn_more)
+        
+        return widget
+        
+    def filtrar_clientes(self):
+        """Filtra a lista de clientes."""
+        texto_busca = self.campo_busca.text().lower()
+        
+        if not texto_busca:
+            self.clientes_filtrados = self.clientes.copy()
+        else:
+            self.clientes_filtrados = [
+                c for c in self.clientes
+                if (texto_busca in c.nome.lower() or
+                    (c.telefone and texto_busca in c.telefone.lower()) or
+                    (c.email and texto_busca in c.email.lower()))
+            ]
+        
+        self.atualizar_tabela()
+        
     def adicionar_cliente(self):
-        """Abre o formulário para adicionar um novo cliente."""
-        formulario = FormularioCliente(parent=self)
-        formulario.cliente_salvo.connect(self.cliente_adicionado)
-        
+        """Adiciona um novo cliente."""
+        formulario = FormularioCliente(self)
         if formulario.exec_():
             self.carregar_clientes()
+            self.clientes_atualizados.emit()
             
-    def editar_cliente(self, cliente: Cliente):
-        """Abre o formulário para editar um cliente."""
-        formulario = FormularioCliente(cliente=cliente, parent=self)
-        formulario.cliente_salvo.connect(self.cliente_atualizado)
+    def visualizar_cliente(self, cliente):
+        """Visualiza detalhes do cliente."""
+        formulario = FormularioCliente(cliente, self, modo_visualizacao=True)
+        formulario.exec_()
         
+    def editar_cliente(self, cliente):
+        """Edita um cliente."""
+        formulario = FormularioCliente(cliente, self)
         if formulario.exec_():
             self.carregar_clientes()
+            self.clientes_atualizados.emit()
             
-    def excluir_cliente(self, cliente: Cliente):
-        """Exclui um cliente após confirmação."""
+    def excluir_cliente(self, cliente):
+        """Exclui um cliente."""
         resposta = QMessageBox.question(
             self,
             "Confirmar Exclusão",
-            f"Tem certeza que deseja excluir o cliente '{cliente.nome}'?",
+            f"Deseja realmente excluir o cliente '{cliente.nome}'?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
         
         if resposta == QMessageBox.Yes:
             try:
-                if ClienteController.excluir_cliente(cliente.id):
-                    QMessageBox.information(self, "Sucesso", "Cliente excluído com sucesso.")
-                    self.carregar_clientes()
-                else:
-                    QMessageBox.critical(self, "Erro", "Não foi possível excluir o cliente.")
+                ClienteController.excluir_cliente(cliente.id)
+                QMessageBox.information(self, "Sucesso", "Cliente excluído com sucesso!")
+                self.carregar_clientes()
+                self.clientes_atualizados.emit()
             except Exception as e:
-                QMessageBox.critical(self, "Erro", f"Ocorreu um erro ao excluir o cliente:\n{str(e)}")
+                QMessageBox.critical(self, "Erro", f"Não foi possível excluir o cliente:\n{str(e)}")
                 
-    def cliente_adicionado(self, cliente: Cliente):
-        """Callback chamado quando um cliente é adicionado."""
-        QMessageBox.information(self, "Sucesso", f"Cliente '{cliente.nome}' adicionado com sucesso.")
+    def mostrar_mais_acoes(self):
+        """Mostra menu de mais ações."""
+        try:
+            menu = QMenu(self)
+            menu.addAction("📊 Exportar para Excel")
+            menu.addAction("📄 Exportar para PDF")
+            menu.addAction("🖨 Imprimir lista")
+            menu.addSeparator()
+            menu.addAction("📧 Enviar email em massa")
+            menu.addAction("💬 Enviar SMS em massa")
+            
+            btn = self.sender()
+            if btn:
+                menu.exec_(btn.mapToGlobal(btn.rect().bottomLeft()))
+        except Exception as e:
+            QMessageBox.information(self, "Mais Ações", "Menu de ações em desenvolvimento.")
+            
+    def mais_acoes_item(self, cliente):
+        """Mostra mais ações para um cliente."""
+        try:
+            menu = QMenu(self)
+            
+            action_vendas = menu.addAction("🛒 Ver vendas")
+            action_vendas.triggered.connect(lambda: self.ver_vendas_cliente(cliente))
+            
+            action_dividas = menu.addAction("💵 Ver dívidas")
+            action_dividas.triggered.connect(lambda: self.ver_dividas_cliente(cliente))
+            
+            menu.addSeparator()
+            menu.addAction("📧 Enviar email")
+            menu.addAction("💬 Enviar SMS")
+            
+            btn = self.sender()
+            if btn:
+                menu.exec_(btn.mapToGlobal(btn.rect().bottomLeft()))
+        except Exception as e:
+            self.editar_cliente(cliente)
+            
+    def ver_vendas_cliente(self, cliente):
+        """Mostra vendas do cliente."""
+        QMessageBox.information(self, "Vendas", f"Vendas do cliente '{cliente.nome}' em desenvolvimento.")
         
-    def cliente_atualizado(self, cliente: Cliente):
-        """Callback chamado quando um cliente é atualizado."""
-        QMessageBox.information(self, "Sucesso", f"Cliente '{cliente.nome}' atualizado com sucesso.")
+    def ver_dividas_cliente(self, cliente):
+        """Mostra dívidas do cliente."""
+        QMessageBox.information(self, "Dívidas", f"Dívidas do cliente '{cliente.nome}' em desenvolvimento.")

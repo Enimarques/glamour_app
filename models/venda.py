@@ -37,6 +37,7 @@ class Venda:
     status: str = "pago"  # 'pago' ou 'pendente'
     data_venda: Optional[datetime] = None
     dia_vencimento: Optional[int] = None  # Dia do mês para vencimento (para vendas parceladas)
+    observacoes: Optional[str] = None
     itens: List[ItemVenda] = None
     cliente: Optional[Cliente] = None  # Para conveniência, não armazenado no BD
     
@@ -50,8 +51,11 @@ class Venda:
     def from_row(cls, row: sqlite3.Row) -> 'Venda':
         """Cria uma instância de Venda a partir de uma linha do banco de dados."""
         data_venda = datetime.fromisoformat(row['data_venda']) if row['data_venda'] else None
-        # Obter dia de vencimento se existir
-        dia_vencimento = row['dia_vencimento'] if 'dia_vencimento' in row and row['dia_vencimento'] else None
+        # Obter dia de vencimento e observações se existirem
+        keys = row.keys()
+        dia_vencimento = row['dia_vencimento'] if 'dia_vencimento' in keys and row['dia_vencimento'] else None
+        observacoes = row['observacoes'] if 'observacoes' in keys else None
+        
         return cls(
             id=row['id'],
             cliente_id=row['cliente_id'],
@@ -59,7 +63,8 @@ class Venda:
             tipo_pagamento=row['tipo_pagamento'],
             status=row['status'],
             data_venda=data_venda,
-            dia_vencimento=dia_vencimento
+            dia_vencimento=dia_vencimento,
+            observacoes=observacoes
         )
     
     def salvar(self) -> bool:
@@ -73,12 +78,12 @@ class Venda:
             if self.id is None:
                 # Insere nova venda
                 query = '''
-                    INSERT INTO vendas (cliente_id, valor_total, tipo_pagamento, status, data_venda, dia_vencimento)
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    INSERT INTO vendas (cliente_id, valor_total, tipo_pagamento, status, data_venda, dia_vencimento, observacoes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 '''
                 cursor = gerenciador_bd.executar_consulta(query, (
                     self.cliente_id, self.valor_total, self.tipo_pagamento, 
-                    self.status, self.data_venda.isoformat(), self.dia_vencimento
+                    self.status, self.data_venda.isoformat(), self.dia_vencimento, self.observacoes
                 ))
                 self.id = cursor.lastrowid
                 
@@ -90,12 +95,12 @@ class Venda:
                 # Atualiza venda existente
                 query = '''
                     UPDATE vendas 
-                    SET cliente_id=?, valor_total=?, tipo_pagamento=?, status=?, data_venda=?, dia_vencimento=?
+                    SET cliente_id=?, valor_total=?, tipo_pagamento=?, status=?, data_venda=?, dia_vencimento=?, observacoes=?
                     WHERE id=?
                 '''
                 gerenciador_bd.executar_consulta(query, (
                     self.cliente_id, self.valor_total, self.tipo_pagamento, 
-                    self.status, self.data_venda.isoformat(), self.dia_vencimento, self.id
+                    self.status, self.data_venda.isoformat(), self.dia_vencimento, self.observacoes, self.id
                 ))
                 
                 # Para simplificar neste MVP, não atualizaremos os itens da venda

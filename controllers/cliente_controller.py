@@ -5,13 +5,16 @@ class ClienteController:
     """Controlador para gerenciar operações relacionadas a clientes."""
     
     @staticmethod
-    def criar_cliente(nome: str, telefone: str = None, observacoes: str = None) -> Cliente:
+    def criar_cliente(nome: str, telefone: str = None, tipo: str = "Avulso", 
+                      comissao_padrao: float = 0.0, observacoes: str = None) -> Cliente:
         """
         Cria um novo cliente.
         
         Args:
             nome (str): Nome do cliente
             telefone (str, opcional): Telefone do cliente
+            tipo (str, opcional): Tipo do cliente ('Avulso' ou 'Revendedora')
+            comissao_padrao (float, opcional): Comissão padrão para revendedoras
             observacoes (str, opcional): Observações sobre o cliente
             
         Returns:
@@ -20,6 +23,8 @@ class ClienteController:
         cliente = Cliente(
             nome=nome,
             telefone=telefone,
+            tipo=tipo,
+            comissao_padrao=comissao_padrao,
             observacoes=observacoes
         )
         cliente.salvar()
@@ -27,6 +32,7 @@ class ClienteController:
     
     @staticmethod
     def atualizar_cliente(cliente_id: int, nome: str = None, telefone: str = None,
+                         tipo: str = None, comissao_padrao: float = None,
                          observacoes: str = None) -> Optional[Cliente]:
         """
         Atualiza um cliente existente.
@@ -35,6 +41,8 @@ class ClienteController:
             cliente_id (int): ID do cliente a ser atualizado
             nome (str, opcional): Novo nome do cliente
             telefone (str, opcional): Novo telefone do cliente
+            tipo (str, opcional): Novo tipo do cliente
+            comissao_padrao (float, opcional): Nova comissão padrão
             observacoes (str, opcional): Novas observações sobre o cliente
             
         Returns:
@@ -48,6 +56,10 @@ class ClienteController:
             cliente.nome = nome
         if telefone is not None:
             cliente.telefone = telefone
+        if tipo is not None:
+            cliente.tipo = tipo
+        if comissao_padrao is not None:
+            cliente.comissao_padrao = comissao_padrao
         if observacoes is not None:
             cliente.observacoes = observacoes
             

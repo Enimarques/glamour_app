@@ -64,12 +64,7 @@ class FormularioVenda(QDialog):
         
         # Título
         lbl_titulo = QLabel("Informações Básicas da Venda")
-        lbl_titulo.setStyleSheet("""
-            font-size: 18px;
-            font-weight: bold;
-            color: #333333;
-            margin-bottom: 20px;
-        """)
+        lbl_titulo.setObjectName("titulo_secao")
         layout_info.addWidget(lbl_titulo)
         
         # Grupo de cliente
@@ -140,12 +135,7 @@ class FormularioVenda(QDialog):
         
         # Título
         lbl_titulo = QLabel("Itens da Venda")
-        lbl_titulo.setStyleSheet("""
-            font-size: 18px;
-            font-weight: bold;
-            color: #333333;
-            margin-bottom: 20px;
-        """)
+        lbl_titulo.setObjectName("titulo_secao")
         layout_itens.addWidget(lbl_titulo)
         
         # Grupo para adicionar itens
@@ -201,14 +191,7 @@ class FormularioVenda(QDialog):
     def criar_resumo_venda(self, layout_itens):
         """Cria o resumo da venda."""
         frame_resumo = QFrame()
-        frame_resumo.setStyleSheet("""
-            QFrame {
-                background-color: #F8F9FA;
-                border: 1px solid #E0E0E0;
-                border-radius: 8px;
-                padding: 15px;
-            }
-        """)
+        frame_resumo.setObjectName("container_card")
         
         layout_resumo = QHBoxLayout(frame_resumo)
         
@@ -216,11 +199,7 @@ class FormularioVenda(QDialog):
         layout_resumo.addWidget(self.lbl_resumo_itens)
         
         self.lbl_resumo_total = QLabel("Total: R$ 0,00")
-        self.lbl_resumo_total.setStyleSheet("""
-            font-weight: bold;
-            font-size: 16px;
-            color: #4A90E2;
-        """)
+        self.lbl_resumo_total.setObjectName("texto_destaque")
         layout_resumo.addWidget(self.lbl_resumo_total)
         
         layout_resumo.addStretch()
@@ -424,19 +403,7 @@ class FormularioVenda(QDialog):
             layout_acoes.setSpacing(5)
             
             btn_remover = QPushButton("Remover")
-            btn_remover.setStyleSheet("""
-                QPushButton {
-                    background-color: #FF6B6B;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    padding: 3px 8px;
-                    font-size: 11px;
-                }
-                QPushButton:hover {
-                    background-color: #E55A5A;
-                }
-            """)
+            btn_remover.setObjectName("danger")
             btn_remover.clicked.connect(lambda _, i=linha: self.remover_item_venda(i))
             layout_acoes.addWidget(btn_remover)
             

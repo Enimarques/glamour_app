@@ -9,6 +9,7 @@ import sys
 import os
 from PyQt5.QtWidgets import QApplication
 from ui.janela_principal import JanelaPrincipal
+from ui.styles import GLOBAL_STYLESHEET
 
 def main():
     """Função principal da aplicação."""
@@ -16,6 +17,9 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("Sistema de Gerenciamento de Loja de Semijoias")
     app.setApplicationVersion("1.0.0")
+    
+    # Aplica o estilo global (QSS)
+    app.setStyleSheet(GLOBAL_STYLESHEET)
     
     # Cria e mostra a janela principal
     janela = JanelaPrincipal()

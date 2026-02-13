@@ -9,15 +9,27 @@ class Cliente:
     id: Optional[int] = None
     nome: str = ""
     telefone: Optional[str] = None
+    email: Optional[str] = None
+    tipo: str = "Avulso"
+    comissao_padrao: float = 0.0
     observacoes: Optional[str] = None
     
     @classmethod
     def from_row(cls, row: sqlite3.Row) -> 'Cliente':
         """Cria uma instância de Cliente a partir de uma linha do banco de dados."""
+        # Verifica se as colunas novas existem na row (para compatibilidade)
+        keys = row.keys()
+        tipo = row['tipo'] if 'tipo' in keys else 'Avulso'
+        comissao = row['comissao_padrao'] if 'comissao_padrao' in keys else 0.0
+        email = row['email'] if 'email' in keys else None
+        
         return cls(
             id=row['id'],
             nome=row['nome'],
             telefone=row['telefone'],
+            email=email,
+            tipo=tipo,
+            comissao_padrao=comissao,
             observacoes=row['observacoes']
         )
     
@@ -32,22 +44,22 @@ class Cliente:
             if self.id is None:
                 # Insere novo cliente
                 consulta = '''
-                    INSERT INTO clientes (nome, telefone, observacoes)
-                    VALUES (?, ?, ?)
+                    INSERT INTO clientes (nome, telefone, email, tipo, comissao_padrao, observacoes)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 '''
                 cursor = gerenciador_bd.executar_consulta(consulta, (
-                    self.nome, self.telefone, self.observacoes
+                    self.nome, self.telefone, self.email, self.tipo, self.comissao_padrao, self.observacoes
                 ))
                 self.id = cursor.lastrowid
             else:
                 # Atualiza cliente existente
                 consulta = '''
                     UPDATE clientes 
-                    SET nome=?, telefone=?, observacoes=?, atualizado_em=CURRENT_TIMESTAMP
+                    SET nome=?, telefone=?, email=?, tipo=?, comissao_padrao=?, observacoes=?, atualizado_em=CURRENT_TIMESTAMP
                     WHERE id=?
                 '''
                 gerenciador_bd.executar_consulta(consulta, (
-                    self.nome, self.telefone, self.observacoes, self.id
+                    self.nome, self.telefone, self.email, self.tipo, self.comissao_padrao, self.observacoes, self.id
                 ))
             return True
         except Exception as e:

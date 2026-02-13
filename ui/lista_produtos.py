@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
                              QTableWidget, QTableWidgetItem, QHeaderView, 
                              QMessageBox, QAbstractItemView, QLabel, QLineEdit,
-                             QComboBox, QSpacerItem, QSizePolicy)
+                             QComboBox, QSpacerItem, QSizePolicy, QFrame)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QColor
 from models.produto import Produto
@@ -27,58 +27,151 @@ class ListaProdutos(QWidget):
         layout_principal.setContentsMargins(30, 30, 30, 30)
         layout_principal.setSpacing(20)
         
-        # Cabeçalho com filtros
-        self.criar_cabecalho(layout_principal)
+        # Cabeçalho da página
+        self.criar_cabecalho_pagina(layout_principal)
+        
+        # Barra de ferramentas
+        self.criar_barra_ferramentas(layout_principal)
+        
+        # Cards de resumo
+        self.criar_cards_resumo(layout_principal)
         
         # Tabela de produtos
         self.criar_tabela_produtos(layout_principal)
         
-        # Aplicar estilo
-        self.aplicar_estilo()
+    def criar_cabecalho_pagina(self, layout_principal):
+        """Cria o cabeçalho da página com título e breadcrumb."""
+        layout_header = QHBoxLayout()
         
-    def criar_cabecalho(self, layout_principal):
-        """Cria o cabeçalho com título e filtros."""
-        # Layout do cabeçalho
-        layout_cabecalho = QHBoxLayout()
+        # Layout para ícone + título
+        layout_titulo = QHBoxLayout()
         
-        # Título
-        lbl_titulo = QLabel("Lista de Produtos")
-        lbl_titulo.setStyleSheet("""
-            font-size: 24px;
-            font-weight: bold;
-            color: #333333;
-        """)
-        layout_cabecalho.addWidget(lbl_titulo)
+        lbl_icone = QLabel("💎")
+        lbl_icone.setObjectName("breadcrumb_icon")
+        layout_titulo.addWidget(lbl_icone)
         
-        # Espaçador
-        layout_cabecalho.addStretch()
+        lbl_titulo = QLabel("Produtos")
+        lbl_titulo.setObjectName("page_title")
+        layout_titulo.addWidget(lbl_titulo)
+        
+        layout_titulo.addStretch()
+        layout_header.addLayout(layout_titulo)
+        
+        # Breadcrumb
+        layout_breadcrumb = QHBoxLayout()
+        layout_breadcrumb.addStretch()
+        
+        lbl_home = QLabel("🏠 Início")
+        lbl_home.setObjectName("breadcrumb")
+        lbl_home.setCursor(Qt.PointingHandCursor)
+        layout_breadcrumb.addWidget(lbl_home)
+        
+        lbl_sep1 = QLabel(" › ")
+        lbl_sep1.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_sep1)
+        
+        lbl_atual = QLabel("Produtos")
+        lbl_atual.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_atual)
+        
+        layout_header.addLayout(layout_breadcrumb)
+        layout_principal.addLayout(layout_header)
+
+    def criar_barra_ferramentas(self, layout_principal):
+        """Cria a barra de ferramentas com ações e filtros."""
+        frame_toolbar = QFrame()
+        frame_toolbar.setObjectName("toolbar_header")
+        layout_toolbar = QHBoxLayout(frame_toolbar)
+        layout_toolbar.setContentsMargins(10, 10, 10, 10)
+        layout_toolbar.setSpacing(15)
+        
+        # Botões de ação
+        btn_adicionar = QPushButton("✚ Adicionar Produto")
+        btn_adicionar.setObjectName("btn_adicionar")
+        btn_adicionar.clicked.connect(self.adicionar_produto)
+        layout_toolbar.addWidget(btn_adicionar)
+        
+        btn_atualizar = QPushButton("🔄 Atualizar")
+        btn_atualizar.setObjectName("btn_mais_acoes")
+        btn_atualizar.clicked.connect(self.carregar_produtos)
+        layout_toolbar.addWidget(btn_atualizar)
+        
+        layout_toolbar.addStretch()
         
         # Filtros
         self.combo_categoria = QComboBox()
         self.combo_categoria.addItem("Todas as categorias")
         self.combo_categoria.addItems(["Semijoias", "Relógios", "Acessórios", "Outros"])
-        self.combo_categoria.setMinimumWidth(150)
+        self.combo_categoria.setMinimumWidth(180)
         self.combo_categoria.currentTextChanged.connect(self.filtrar_produtos)
-        layout_cabecalho.addWidget(self.combo_categoria)
+        layout_toolbar.addWidget(self.combo_categoria)
         
         self.campo_busca = QLineEdit()
-        self.campo_busca.setPlaceholderText("Buscar produtos...")
-        self.campo_busca.setMinimumWidth(200)
+        self.campo_busca.setPlaceholderText("🔍 Buscar produtos...")
+        self.campo_busca.setMinimumWidth(250)
         self.campo_busca.textChanged.connect(self.filtrar_produtos)
-        layout_cabecalho.addWidget(self.campo_busca)
+        layout_toolbar.addWidget(self.campo_busca)
         
-        # Botões
-        self.btn_atualizar = QPushButton("Atualizar")
-        self.btn_atualizar.setObjectName("secondary")
-        self.btn_atualizar.clicked.connect(self.carregar_produtos)
-        layout_cabecalho.addWidget(self.btn_atualizar)
+        layout_principal.addWidget(frame_toolbar)
+
+    def criar_cards_resumo(self, layout_principal):
+        """Cria cards de resumo para os produtos."""
+        layout_cards = QHBoxLayout()
+        layout_cards.setSpacing(20)
         
-        self.btn_adicionar = QPushButton("Adicionar Produto")
-        self.btn_adicionar.clicked.connect(self.adicionar_produto)
-        layout_cabecalho.addWidget(self.btn_adicionar)
+        # Card Total de Produtos
+        self.card_total = self.criar_card_estilizado(
+            "Total de Produtos", "0", "📦", "summary_card_total"
+        )
+        layout_cards.addWidget(self.card_total)
         
-        layout_principal.addLayout(layout_cabecalho)
+        # Card Estoque Baixo
+        self.card_estoque_baixo = self.criar_card_estilizado(
+            "Estoque Baixo", "0", "⚠️", "summary_card_vencidos"
+        )
+        layout_cards.addWidget(self.card_estoque_baixo)
         
+        # Card Valor em Estoque
+        self.card_valor_estoque = self.criar_card_estilizado(
+            "Valor em Estoque", "R$ 0,00", "💰", "summary_card_recebidos"
+        )
+        layout_cards.addWidget(self.card_valor_estoque)
+        
+        layout_principal.addLayout(layout_cards)
+
+    def criar_card_estilizado(self, titulo, valor, icone, object_name):
+        """Auxiliar para criar cards de resumo estilizados."""
+        frame = QFrame()
+        frame.setObjectName(object_name)
+        frame.setMinimumHeight(100)
+        
+        layout = QVBoxLayout(frame)
+        
+        # Linha superior (Ícone e Título)
+        layout_top = QHBoxLayout()
+        lbl_titulo = QLabel(titulo)
+        lbl_titulo.setObjectName("summary_card_title")
+        layout_top.addWidget(lbl_titulo)
+        
+        layout_top.addStretch()
+        
+        lbl_icone = QLabel(icone)
+        lbl_icone.setObjectName("summary_card_icon")
+        layout_top.addWidget(lbl_icone)
+        layout.addLayout(layout_top)
+        
+        # Valor
+        lbl_valor = QLabel(valor)
+        lbl_valor.setObjectName("summary_card_value")
+        # Armazena a referência para atualização posterior
+        if titulo == "Total de Produtos": self.lbl_total_produtos = lbl_valor
+        elif titulo == "Estoque Baixo": self.lbl_estoque_baixo = lbl_valor
+        elif titulo == "Valor em Estoque": self.lbl_valor_estoque = lbl_valor
+        
+        layout.addWidget(lbl_valor)
+        
+        return frame
+
     def criar_tabela_produtos(self, layout_principal):
         """Cria a tabela de produtos com estilo moderno."""
         self.tabela_produtos = QTableWidget()
@@ -92,6 +185,7 @@ class ListaProdutos(QWidget):
         self.tabela_produtos.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tabela_produtos.setSelectionMode(QAbstractItemView.SingleSelection)
         self.tabela_produtos.setAlternatingRowColors(True)
+        self.tabela_produtos.setShowGrid(False)  # Remove grades verticais para visual mais limpo
         
         # Configurar cabeçalho
         header = self.tabela_produtos.horizontalHeader()
@@ -107,70 +201,27 @@ class ListaProdutos(QWidget):
         
         layout_principal.addWidget(self.tabela_produtos)
         
-    def aplicar_estilo(self):
-        """Aplica o estilo moderno à tabela."""
-        estilo = """
-        QTableWidget {
-            background-color: white;
-            alternate-background-color: #FAFAFA;
-            border: 1px solid #E0E0E0;
-            border-radius: 8px;
-            gridline-color: #F0F0F0;
-            selection-background-color: #F0F5FF;
-            selection-color: #333333;
-        }
-        
-        QTableWidget::item {
-            padding: 10px;
-            border-bottom: 1px solid #F0F0F0;
-        }
-        
-        QTableWidget::item:selected {
-            background-color: #F0F5FF;
-        }
-        
-        QHeaderView::section {
-            background-color: #F5F5F5;
-            color: #333333;
-            padding: 12px;
-            font-weight: 600;
-            border: none;
-            border-bottom: 1px solid #E0E0E0;
-        }
-        
-        QComboBox {
-            padding: 8px 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            background-color: white;
-            min-height: 20px;
-        }
-        
-        QLineEdit {
-            padding: 10px 12px;
-            border: 1px solid #E0E0E0;
-            border-radius: 6px;
-            background-color: white;
-            selection-background-color: #4A90E2;
-        }
-        
-        QLineEdit:focus {
-            border: 1px solid #4A90E2;
-            outline: none;
-        }
-        """
-        self.tabela_produtos.setStyleSheet(estilo)
-        
     def carregar_produtos(self):
         """Carrega a lista de produtos do banco de dados."""
         try:
             self.produtos = ProdutoController.listar_produtos()
             self.produtos_filtrados = self.produtos.copy()
             self.atualizar_tabela()
+            self.atualizar_cards_resumo()
             self.produtos_atualizados.emit()
         except Exception as e:
             QMessageBox.critical(self, "Erro", f"Não foi possível carregar os produtos:\n{str(e)}")
             
+    def atualizar_cards_resumo(self):
+        """Atualiza os valores nos cards de resumo."""
+        total_produtos = len(self.produtos)
+        estoque_baixo = len([p for p in self.produtos if p.quantidade <= 5])
+        valor_estoque = sum(p.preco_custo * p.quantidade for p in self.produtos)
+        
+        self.lbl_total_produtos.setText(str(total_produtos))
+        self.lbl_estoque_baixo.setText(str(estoque_baixo))
+        self.lbl_valor_estoque.setText(f"R$ {valor_estoque:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+
     def filtrar_produtos(self):
         """Filtra os produtos com base nos critérios selecionados."""
         termo_busca = self.campo_busca.text().lower()
@@ -245,26 +296,15 @@ class ListaProdutos(QWidget):
             layout_acoes.setContentsMargins(10, 5, 10, 5)
             layout_acoes.setSpacing(8)
             
-            btn_editar = QPushButton("Editar")
-            btn_editar.setObjectName("secondary")
-            btn_editar.setFixedSize(80, 30)
+            btn_editar = QPushButton("✏️")
+            btn_editar.setObjectName("btn_action_edit")
+            btn_editar.setToolTip("Editar Produto")
             btn_editar.clicked.connect(lambda checked, p=produto: self.editar_produto(p))
             layout_acoes.addWidget(btn_editar)
             
-            btn_excluir = QPushButton("Excluir")
-            btn_excluir.setStyleSheet("""
-                QPushButton {
-                    background-color: #FF6B6B;
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 13px;
-                }
-                QPushButton:hover {
-                    background-color: #E55A5A;
-                }
-            """)
-            btn_excluir.setFixedSize(80, 30)
+            btn_excluir = QPushButton("🗑️")
+            btn_excluir.setObjectName("btn_action_delete")
+            btn_excluir.setToolTip("Excluir Produto")
             btn_excluir.clicked.connect(lambda checked, p=produto: self.excluir_produto(p))
             layout_acoes.addWidget(btn_excluir)
             
