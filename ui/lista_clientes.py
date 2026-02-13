@@ -361,14 +361,14 @@ class ListaClientes(QWidget):
         
     def adicionar_cliente(self):
         """Adiciona um novo cliente."""
-        formulario = FormularioCliente(self)
+        formulario = FormularioCliente(parent=self)
         if formulario.exec_():
             self.carregar_clientes()
             self.clientes_atualizados.emit()
             
     def visualizar_cliente(self, cliente):
         """Visualiza detalhes do cliente."""
-        formulario = FormularioCliente(cliente, self, modo_visualizacao=True)
+        formulario = FormularioCliente(cliente, self)
         formulario.exec_()
         
     def editar_cliente(self, cliente):
@@ -437,8 +437,26 @@ class ListaClientes(QWidget):
             
     def ver_vendas_cliente(self, cliente):
         """Mostra vendas do cliente."""
-        QMessageBox.information(self, "Vendas", f"Vendas do cliente '{cliente.nome}' em desenvolvimento.")
+        try:
+            janela = self.window()
+            if hasattr(janela, "nav_list") and hasattr(janela, "lista_vendas"):
+                janela.nav_list.setCurrentRow(3)
+                vendas = janela.lista_vendas
+                vendas.campo_busca.setText(cliente.nome)
+                vendas.combo_status.setCurrentIndex(0)
+                vendas.filtrar_vendas()
+        except Exception:
+            QMessageBox.information(self, "Vendas", f"Não foi possível abrir vendas para '{cliente.nome}'.")
         
     def ver_dividas_cliente(self, cliente):
         """Mostra dívidas do cliente."""
-        QMessageBox.information(self, "Dívidas", f"Dívidas do cliente '{cliente.nome}' em desenvolvimento.")
+        try:
+            janela = self.window()
+            if hasattr(janela, "nav_list") and hasattr(janela, "lista_vendas"):
+                janela.nav_list.setCurrentRow(3)
+                vendas = janela.lista_vendas
+                vendas.campo_busca.setText(cliente.nome)
+                vendas.combo_status.setCurrentIndex(2)
+                vendas.filtrar_vendas()
+        except Exception:
+            QMessageBox.information(self, "Dívidas", f"Não foi possível abrir dívidas para '{cliente.nome}'.")

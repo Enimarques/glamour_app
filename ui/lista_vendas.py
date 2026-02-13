@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTableWidget, QTableWidgetItem, QHeaderView, 
                              QMessageBox, QAbstractItemView, QLabel, QLineEdit,
                              QComboBox, QDateEdit, QSpacerItem, QSizePolicy,
-                             QGroupBox, QFrame, QMenu)
+                             QGroupBox, QFrame, QMenu, QInputDialog)
 from PyQt5.QtCore import Qt, pyqtSignal, QDate
 from PyQt5.QtGui import QFont, QColor
 from models.venda import Venda
@@ -26,8 +26,8 @@ class ListaVendas(QWidget):
     def inicializar_ui(self):
         """Inicializa a interface do usuário."""
         layout_principal = QVBoxLayout(self)
-        layout_principal.setContentsMargins(30, 30, 30, 30)
-        layout_principal.setSpacing(20)
+        layout_principal.setContentsMargins(25, 25, 25, 25)
+        layout_principal.setSpacing(15)
         
         # Cabeçalho da página
         self.criar_cabecalho_pagina(layout_principal)
@@ -44,6 +44,7 @@ class ListaVendas(QWidget):
     def criar_cabecalho_pagina(self, layout_principal):
         """Cria o cabeçalho da página."""
         layout_header = QHBoxLayout()
+        layout_header.setContentsMargins(0, 0, 0, 10)
         
         layout_titulo = QHBoxLayout()
         
@@ -53,6 +54,7 @@ class ListaVendas(QWidget):
         
         lbl_titulo = QLabel("Vendas")
         lbl_titulo.setObjectName("page_title")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: 800;")
         layout_titulo.addWidget(lbl_titulo)
         
         layout_titulo.addStretch()
@@ -75,14 +77,6 @@ class ListaVendas(QWidget):
         lbl_atual.setObjectName("breadcrumb")
         layout_breadcrumb.addWidget(lbl_atual)
         
-        lbl_sep2 = QLabel(" › ")
-        lbl_sep2.setObjectName("breadcrumb")
-        layout_breadcrumb.addWidget(lbl_sep2)
-        
-        lbl_listar = QLabel("Listar")
-        lbl_listar.setObjectName("breadcrumb")
-        layout_breadcrumb.addWidget(lbl_listar)
-        
         layout_header.addLayout(layout_breadcrumb)
         layout_principal.addLayout(layout_header)
         
@@ -90,62 +84,60 @@ class ListaVendas(QWidget):
         """Cria a barra de ferramentas."""
         frame_toolbar = QFrame()
         frame_toolbar.setObjectName("toolbar_header")
+        frame_toolbar.setStyleSheet("background-color: transparent; border: none; padding: 0;")
         layout_toolbar = QHBoxLayout(frame_toolbar)
-        layout_toolbar.setContentsMargins(10, 10, 10, 10)
-        layout_toolbar.setSpacing(15)
+        layout_toolbar.setContentsMargins(0, 0, 0, 10)
+        layout_toolbar.setSpacing(10)
         
         # Botões de ação
-        btn_adicionar = QPushButton("✚ Registrar Venda")
+        btn_adicionar = QPushButton("+ Registrar Venda")
         btn_adicionar.setObjectName("btn_adicionar")
+        btn_adicionar.setMinimumHeight(38)
         btn_adicionar.clicked.connect(self.registrar_venda)
         layout_toolbar.addWidget(btn_adicionar)
         
         btn_mais_acoes = QPushButton("⚙ Mais ações ▼")
         btn_mais_acoes.setObjectName("btn_mais_acoes")
+        btn_mais_acoes.setMinimumHeight(38)
         btn_mais_acoes.clicked.connect(self.mostrar_mais_acoes)
         layout_toolbar.addWidget(btn_mais_acoes)
         
         layout_toolbar.addStretch()
         
-        # Filtros rápidos
-        lbl_periodo = QLabel("Período:")
-        layout_toolbar.addWidget(lbl_periodo)
-        
+        # Filtros
         self.date_inicio = QDateEdit()
         self.date_inicio.setDisplayFormat("dd/MM/yyyy")
         self.date_inicio.setDate(QDate.currentDate().addDays(-30))
         self.date_inicio.setCalendarPopup(True)
-        self.date_inicio.dateChanged.connect(self.filtrar_vendas)
+        self.date_inicio.setFixedWidth(110)
         layout_toolbar.addWidget(self.date_inicio)
         
         lbl_ate = QLabel("até")
+        lbl_ate.setStyleSheet("color: #718096;")
         layout_toolbar.addWidget(lbl_ate)
         
         self.date_fim = QDateEdit()
         self.date_fim.setDisplayFormat("dd/MM/yyyy")
         self.date_fim.setDate(QDate.currentDate())
         self.date_fim.setCalendarPopup(True)
-        self.date_fim.dateChanged.connect(self.filtrar_vendas)
+        self.date_fim.setFixedWidth(110)
         layout_toolbar.addWidget(self.date_fim)
         
-        # Status
         self.combo_status = QComboBox()
         self.combo_status.addItem("Todos", "")
         self.combo_status.addItem("Pago", "pago")
         self.combo_status.addItem("Pendente", "pendente")
-        self.combo_status.currentIndexChanged.connect(self.filtrar_vendas)
+        self.combo_status.setFixedWidth(100)
         layout_toolbar.addWidget(self.combo_status)
         
-        # Busca
         self.campo_busca = QLineEdit()
-        self.campo_busca.setPlaceholderText("🔍 Buscar por cliente...")
-        self.campo_busca.setMaximumWidth(250)
-        self.campo_busca.textChanged.connect(self.filtrar_vendas)
+        self.campo_busca.setPlaceholderText("🔍 Buscar cliente...")
+        self.campo_busca.setFixedWidth(180)
         layout_toolbar.addWidget(self.campo_busca)
         
-        # Botão atualizar
-        btn_atualizar = QPushButton("↻ Atualizar")
+        btn_atualizar = QPushButton("↻")
         btn_atualizar.setObjectName("secondary")
+        btn_atualizar.setFixedWidth(40)
         btn_atualizar.clicked.connect(self.carregar_vendas)
         layout_toolbar.addWidget(btn_atualizar)
         
@@ -440,7 +432,13 @@ class ListaVendas(QWidget):
             
     def editar_venda(self, venda):
         """Edita uma venda."""
-        QMessageBox.information(self, "Editar", "Função de edição em desenvolvimento.")
+        try:
+            formulario = FormularioVenda(venda=venda, parent=self)
+            formulario.venda_registrada.connect(self.venda_adicionada)
+            if formulario.exec_():
+                self.carregar_vendas()
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Não foi possível editar a venda:\n{str(e)}")
         
     def excluir_venda(self, venda):
         """Exclui uma venda."""
@@ -453,7 +451,14 @@ class ListaVendas(QWidget):
         )
         
         if resposta == QMessageBox.Yes:
-            QMessageBox.information(self, "Excluir", "Função de exclusão em desenvolvimento.")
+            try:
+                if venda.excluir():
+                    QMessageBox.information(self, "Sucesso", "Venda excluída com sucesso.")
+                    self.carregar_vendas()
+                else:
+                    QMessageBox.critical(self, "Erro", "Não foi possível excluir a venda.")
+            except Exception as e:
+                QMessageBox.critical(self, "Erro", f"Falha ao excluir venda:\n{str(e)}")
             
     def mostrar_mais_acoes(self):
         """Mostra menu de mais ações."""
@@ -494,7 +499,17 @@ class ListaVendas(QWidget):
             
     def registrar_pagamento(self, venda):
         """Registra pagamento de uma venda."""
-        QMessageBox.information(self, "Pagamento", "Função de registro de pagamento em desenvolvimento.")
+        try:
+            valor, ok = QInputDialog.getDouble(self, "Registrar Pagamento", "Valor pago:", venda.valor_total, 0.0, 999999.99, 2)
+            if ok:
+                sucesso = VendaController.registrar_pagamento(venda.id, valor)
+                if sucesso:
+                    QMessageBox.information(self, "Sucesso", "Pagamento registrado e venda quitada.")
+                    self.carregar_vendas()
+                else:
+                    QMessageBox.warning(self, "Aviso", "Pagamento não registrado. Verifique o valor ou o tipo de venda.")
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Não foi possível registrar o pagamento:\n{str(e)}")
         
     def venda_adicionada(self, venda):
         """Callback para venda adicionada."""

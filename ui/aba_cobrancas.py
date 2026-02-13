@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QComboBox, QDateEdit, QSpacerItem, QSizePolicy,
                              QGroupBox, QTextEdit, QSpinBox, QProgressBar,
                              QTabWidget, QFrame, QScrollArea, QDialog, QFormLayout,
-                             QDialogButtonBox, QDoubleSpinBox, QMenu)
+                             QDialogButtonBox, QDoubleSpinBox, QMenu, QInputDialog)
 from PyQt5.QtCore import Qt, pyqtSignal, QDate
 from PyQt5.QtGui import QFont, QColor, QBrush
 from datetime import datetime, timedelta
@@ -13,6 +13,7 @@ from models.venda import Venda
 from models.pagamento import Pagamento
 from controllers.pagamento_controller import PagamentoController
 from controllers.cliente_controller import ClienteController
+from ui.formulario_venda import FormularioVenda
 
 class AbaCobrancas(QWidget):
     """Widget para exibir e gerenciar cobranças e dívidas pendentes."""
@@ -28,8 +29,8 @@ class AbaCobrancas(QWidget):
     def inicializar_ui(self):
         """Inicializa a interface do usuário."""
         layout_principal = QVBoxLayout(self)
-        layout_principal.setContentsMargins(30, 30, 30, 30)
-        layout_principal.setSpacing(20)
+        layout_principal.setContentsMargins(25, 25, 25, 25)
+        layout_principal.setSpacing(15)
         
         # Cabeçalho da página
         self.criar_cabecalho_pagina(layout_principal)
@@ -44,92 +45,78 @@ class AbaCobrancas(QWidget):
         self.criar_tabela_cobrancas(layout_principal)
         
     def criar_cabecalho_pagina(self, layout_principal):
-        """Cria o cabeçalho da página com título e breadcrumb."""
+        """Cria o cabeçalho da página."""
         layout_header = QHBoxLayout()
+        layout_header.setContentsMargins(0, 0, 0, 10)
         
-        # Layout vertical para ícone + título
         layout_titulo = QHBoxLayout()
-        
-        # Ícone (usando caractere Unicode)
         lbl_icone = QLabel("💰")
         lbl_icone.setObjectName("breadcrumb_icon")
         layout_titulo.addWidget(lbl_icone)
         
-        # Título
         lbl_titulo = QLabel("Contas a receber")
         lbl_titulo.setObjectName("page_title")
+        lbl_titulo.setStyleSheet("font-size: 20px; font-weight: 800;")
         layout_titulo.addWidget(lbl_titulo)
         
         layout_titulo.addStretch()
         layout_header.addLayout(layout_titulo)
         
-        # Breadcrumb/navegação
+        # Breadcrumb
         layout_breadcrumb = QHBoxLayout()
         layout_breadcrumb.addStretch()
-        
         lbl_home = QLabel("🏠 Início")
         lbl_home.setObjectName("breadcrumb")
-        lbl_home.setCursor(Qt.PointingHandCursor)
         layout_breadcrumb.addWidget(lbl_home)
-        
-        lbl_sep1 = QLabel(" › ")
-        lbl_sep1.setObjectName("breadcrumb")
-        layout_breadcrumb.addWidget(lbl_sep1)
-        
-        lbl_atual = QLabel("Contas a receber")
+        lbl_sep = QLabel(" › ")
+        lbl_sep.setObjectName("breadcrumb")
+        layout_breadcrumb.addWidget(lbl_sep)
+        lbl_atual = QLabel("Cobranças")
         lbl_atual.setObjectName("breadcrumb")
         layout_breadcrumb.addWidget(lbl_atual)
-        
-        lbl_sep2 = QLabel(" › ")
-        lbl_sep2.setObjectName("breadcrumb")
-        layout_breadcrumb.addWidget(lbl_sep2)
-        
-        lbl_listar = QLabel("Listar")
-        lbl_listar.setObjectName("breadcrumb")
-        layout_breadcrumb.addWidget(lbl_listar)
-        
         layout_header.addLayout(layout_breadcrumb)
+        
         layout_principal.addLayout(layout_header)
         
     def criar_barra_ferramentas(self, layout_principal):
-        """Cria a barra de ferramentas com ações e filtros."""
+        """Cria a barra de ferramentas."""
         frame_toolbar = QFrame()
         frame_toolbar.setObjectName("toolbar_header")
+        frame_toolbar.setStyleSheet("background-color: transparent; border: none; padding: 0;")
         layout_toolbar = QHBoxLayout(frame_toolbar)
-        layout_toolbar.setContentsMargins(10, 10, 10, 10)
-        layout_toolbar.setSpacing(15)
+        layout_toolbar.setContentsMargins(0, 0, 0, 10)
+        layout_toolbar.setSpacing(10)
         
-        # Botões de ação à esquerda
-        btn_adicionar = QPushButton("✚ Adicionar")
+        btn_adicionar = QPushButton("+ Adicionar")
         btn_adicionar.setObjectName("btn_adicionar")
+        btn_adicionar.setMinimumHeight(38)
         btn_adicionar.clicked.connect(self.adicionar_cobranca)
         layout_toolbar.addWidget(btn_adicionar)
         
-        btn_mais_acoes = QPushButton("⚙ Mais ações ▼")
-        btn_mais_acoes.setObjectName("btn_mais_acoes")
-        btn_mais_acoes.clicked.connect(self.mostrar_mais_acoes)
-        layout_toolbar.addWidget(btn_mais_acoes)
+        btn_mais = QPushButton("⚙ Mais ações ▼")
+        btn_mais.setObjectName("btn_mais_acoes")
+        btn_mais.setMinimumHeight(38)
+        btn_mais.clicked.connect(self.mostrar_mais_acoes)
+        layout_toolbar.addWidget(btn_mais)
         
         layout_toolbar.addStretch()
         
-        # Seletor de mês
         self.combo_mes = QComboBox()
         self.combo_mes.setObjectName("month_selector")
-        meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-                 "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"]
-        for i, mes in enumerate(meses):
-            self.combo_mes.addItem(f"{mes} de {self.ano_atual}", i + 1)
+        self.combo_mes.setFixedWidth(180)
+        meses = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"]
+        self.combo_mes.addItems(meses)
         self.combo_mes.setCurrentIndex(self.mes_atual - 1)
         self.combo_mes.currentIndexChanged.connect(self.filtrar_por_mes)
         layout_toolbar.addWidget(self.combo_mes)
         
-        # Botão de busca avançada
         btn_busca = QPushButton("🔍 Busca avançada")
-        btn_busca.setObjectName("btn_busca_avancada")
+        btn_busca.setMinimumHeight(38)
         btn_busca.clicked.connect(self.abrir_busca_avancada)
         layout_toolbar.addWidget(btn_busca)
         
         layout_principal.addWidget(frame_toolbar)
+
         
     def criar_cards_resumo(self, layout_principal):
         """Cria os cards de resumo das cobranças."""
@@ -250,6 +237,7 @@ class AbaCobrancas(QWidget):
         try:
             # Obter dívidas pendentes
             self.dividas = PagamentoController.obter_dividas_pendentes()
+            self.aplicar_filtro_mes()
             
             # Atualizar resumo
             self.atualizar_resumo()
@@ -272,7 +260,8 @@ class AbaCobrancas(QWidget):
             
             hoje = datetime.now().date()
             
-            for divida in self.dividas:
+            lista = getattr(self, "dividas_filtradas", self.dividas)
+            for divida in lista:
                 valor_pendente = divida['valor_pendente']
                 data_vencimento = divida['data_vencimento']
                 
@@ -314,9 +303,10 @@ class AbaCobrancas(QWidget):
                     
     def atualizar_tabela(self):
         """Atualiza a tabela com as dívidas."""
-        self.tabela_cobrancas.setRowCount(len(self.dividas))
+        lista = getattr(self, "dividas_filtradas", self.dividas)
+        self.tabela_cobrancas.setRowCount(len(lista))
         
-        for linha, divida in enumerate(self.dividas):
+        for linha, divida in enumerate(lista):
             # Código (Venda ID)
             item_codigo = QTableWidgetItem(str(divida['venda'].id))
             item_codigo.setTextAlignment(Qt.AlignCenter)
@@ -456,24 +446,50 @@ class AbaCobrancas(QWidget):
         
     def filtrar_por_mes(self):
         """Filtra as cobranças por mês."""
-        # Implementar filtro por mês
-        self.carregar_dividas()
+        self.mes_atual = self.combo_mes.currentIndex() + 1
+        self.aplicar_filtro_mes()
+        self.atualizar_resumo()
+        self.atualizar_tabela()
+        
+    def aplicar_filtro_mes(self):
+        lista = []
+        for divida in self.dividas:
+            data_venc = divida.get('data_vencimento')
+            if data_venc:
+                if isinstance(data_venc, datetime):
+                    data_venc = data_venc.date()
+                if data_venc.month == self.mes_atual and data_venc.year == self.ano_atual:
+                    lista.append(divida)
+        self.dividas_filtradas = lista if lista else self.dividas
         
     def adicionar_cobranca(self):
         """Adiciona uma nova cobrança."""
-        QMessageBox.information(self, "Adicionar", "Função de adicionar cobrança em desenvolvimento.")
+        try:
+            formulario = FormularioVenda(parent=self)
+            index = formulario.combo_tipo_pagamento.findText("Parcelado Boleto")
+            if index >= 0:
+                formulario.combo_tipo_pagamento.setCurrentIndex(index)
+            if formulario.exec_():
+                self.carregar_dividas()
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Não foi possível adicionar cobrança:\n{str(e)}")
         
     def mostrar_mais_acoes(self):
         """Mostra menu de mais ações."""
         try:
             from PyQt5.QtWidgets import QMenu
             menu = QMenu(self)
-            menu.addAction("Exportar para Excel")
-            menu.addAction("Exportar para PDF")
-            menu.addAction("Imprimir relatório")
+            action_excel = menu.addAction("Exportar para Excel")
+            action_excel.triggered.connect(self.exportar_excel)
+            action_pdf = menu.addAction("Exportar para PDF")
+            action_pdf.triggered.connect(self.exportar_pdf)
+            action_print = menu.addAction("Imprimir relatório")
+            action_print.triggered.connect(self.imprimir_relatorio)
             menu.addSeparator()
-            menu.addAction("Marcar todas como pagas")
-            menu.addAction("Enviar lembretes")
+            action_quitar = menu.addAction("Marcar todas como pagas")
+            action_quitar.triggered.connect(self.marcar_todas_como_pagas)
+            action_lembretes = menu.addAction("Enviar lembretes")
+            action_lembretes.triggered.connect(self.enviar_lembretes)
             
             # Obter o botão que disparou
             btn = self.sender()
@@ -484,7 +500,21 @@ class AbaCobrancas(QWidget):
         
     def abrir_busca_avancada(self):
         """Abre diálogo de busca avançada."""
-        QMessageBox.information(self, "Busca Avançada", "Função de busca avançada em desenvolvimento.")
+        try:
+            texto, ok = QInputDialog.getText(self, "Busca avançada", "Nome do cliente:")
+            if ok:
+                termo = texto.strip().lower()
+                if termo:
+                    self.dividas_filtradas = [
+                        d for d in self.dividas
+                        if d['cliente'] and termo in d['cliente'].nome.lower()
+                    ]
+                else:
+                    self.dividas_filtradas = self.dividas
+                self.atualizar_resumo()
+                self.atualizar_tabela()
+        except Exception as e:
+            QMessageBox.information(self, "Busca", "Não foi possível executar a busca.")
         
     def mostrar_detalhes(self, divida):
         """Mostra os detalhes de uma dívida."""
@@ -493,7 +523,12 @@ class AbaCobrancas(QWidget):
         
     def editar_cobranca(self, divida):
         """Edita uma cobrança."""
-        QMessageBox.information(self, "Editar", f"Editar cobrança {divida['venda'].id} em desenvolvimento.")
+        try:
+            formulario = FormularioVenda(venda=divida['venda'], parent=self)
+            if formulario.exec_():
+                self.carregar_dividas()
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", f"Não foi possível editar:\n{str(e)}")
         
     def excluir_cobranca(self, divida):
         """Exclui uma cobrança."""
@@ -506,7 +541,43 @@ class AbaCobrancas(QWidget):
         )
         
         if resposta == QMessageBox.Yes:
-            QMessageBox.information(self, "Excluir", "Função de exclusão em desenvolvimento.")
+            try:
+                if divida['venda'].excluir():
+                    QMessageBox.information(self, "Sucesso", "Cobrança excluída.")
+                    self.carregar_dividas()
+                else:
+                    QMessageBox.warning(self, "Aviso", "Não foi possível excluir.")
+            except Exception as e:
+                QMessageBox.critical(self, "Erro", f"Falha ao excluir:\n{str(e)}")
+            
+    def exportar_excel(self):
+        QMessageBox.information(self, "Exportar", "Exportação para Excel em desenvolvimento.")
+        
+    def exportar_pdf(self):
+        QMessageBox.information(self, "Exportar", "Exportação para PDF em desenvolvimento.")
+        
+    def imprimir_relatorio(self):
+        QMessageBox.information(self, "Imprimir", "Impressão de relatório em desenvolvimento.")
+        
+    def marcar_todas_como_pagas(self):
+        try:
+            count = 0
+            for d in self.dividas:
+                pendente = d['valor_pendente']
+                if pendente > 0:
+                    PagamentoController.registrar_pagamento(d['venda'].id, pendente, "Quitação em massa")
+                    count += 1
+            QMessageBox.information(self, "Quitação", f"Registros atualizados: {count}")
+            self.carregar_dividas()
+        except Exception as e:
+            QMessageBox.critical(self, "Erro", "Não foi possível quitar em massa.")
+        
+    def enviar_lembretes(self):
+        try:
+            clientes = [d['cliente'].nome for d in self.dividas if d['valor_pendente'] > 0 and d['cliente']]
+            QMessageBox.information(self, "Lembretes", f"Lembretes preparados para {len(clientes)} clientes.")
+        except Exception:
+            QMessageBox.information(self, "Lembretes", "Não foi possível enviar lembretes.")
             
     def mais_acoes_item(self, divida):
         """Mostra mais ações para um item."""
